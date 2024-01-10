@@ -7,8 +7,9 @@ import org.springframework.data.r2dbc.mapping.OutboundRow
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import org.springframework.r2dbc.core.Parameter
+import java.time.Instant
 
-@Table("order")
+@Table("orders")
 class Order(
     @Id
     @Column("id")
@@ -25,7 +26,9 @@ class Order(
 
     @Version
     private var version: Int? = null,
-) : BaseEntity(isNew) {
+    createdAt: Instant? = null,
+    modifiedAt: Instant? = null,
+) : BaseEntity(isNew, createdAt, modifiedAt) {
 
     @PersistenceCreator
     constructor(
@@ -33,7 +36,9 @@ class Order(
         orderProduct: OrderProduct,
         state: OrderState,
         version: Int,
-    ) : this(id, orderProduct, state, false, version)
+        createdAt: Instant,
+        modifiedAt: Instant,
+    ) : this(id, orderProduct, state, false, version, createdAt, modifiedAt)
 
     override fun getId(): Long = id
 
@@ -46,5 +51,11 @@ class Order(
             .append("total_price", Parameter.from(orderProduct.totalPrice))
             .append("state", Parameter.from(state.name))
             .append("version", Parameter.from(version!!))
+            .append("created_at", Parameter.from(createdAt!!))
+            .append("modified_at", Parameter.from(modifiedAt!!))
+    }
+
+    override fun toString(): String {
+        return this.createdAt.toString() + " " + this.version
     }
 }
