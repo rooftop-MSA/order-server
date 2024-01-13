@@ -59,8 +59,4 @@ class Order(
             .append("created_at", Parameter.from(createdAt!!))
             .append("modified_at", Parameter.from(modifiedAt!!))
     }
-
-    override fun toString(): String {
-        return this.createdAt.toString() + " " + this.version
-    }
 }
