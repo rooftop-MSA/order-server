@@ -16,8 +16,7 @@ class OrderService(
 
     @Transactional
     fun order(orderReq: OrderReq, product: ProductRes): Mono<Order> {
-        return createOrder(orderReq, product)
-            .flatMap { orderRepository.save(it) }
+        return orderRepository.save(createOrder(orderReq, product))
             .switchIfEmpty(
                 Mono.error {
                     throw IllegalStateException("Cannot save order")
@@ -25,20 +24,17 @@ class OrderService(
             )
     }
 
-    private fun createOrder(orderReq: OrderReq, product: ProductRes): Mono<Order> {
-        return Mono.fromCallable {
-            createOrder(orderReq, product)
-            Order(
-                id = idGenerator.generate(),
-                userId = orderReq.userId,
-                orderProduct = OrderProduct(
-                    productId = product.id,
-                    productQuantity = orderReq.quantity,
-                    totalPrice = orderReq.quantity * product.price
-                ),
-                state = OrderState.PENDING,
-                isNew = true,
-            )
-        }
+    private fun createOrder(orderReq: OrderReq, product: ProductRes): Order {
+        return Order(
+            id = idGenerator.generate(),
+            userId = orderReq.userId,
+            orderProduct = OrderProduct(
+                productId = product.id,
+                productQuantity = orderReq.quantity,
+                totalPrice = orderReq.quantity * product.price
+            ),
+            state = OrderState.PENDING,
+            isNew = true,
+        )
     }
 }

@@ -13,10 +13,10 @@ import java.time.Instant
 class Order(
     @Id
     @Column("id")
-    private val id: Long,
+    val id: Long,
 
     @Column("user_id")
-    private val userId: Long,
+    val userId: Long,
 
     @Transient
     private val orderProduct: OrderProduct,

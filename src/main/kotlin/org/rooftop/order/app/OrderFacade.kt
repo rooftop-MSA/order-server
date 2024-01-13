@@ -1,6 +1,6 @@
 package org.rooftop.order.app
 
-import org.rooftop.api.identity.UserGetByNameRes
+import org.rooftop.api.identity.UserGetByIdRes
 import org.rooftop.api.order.OrderReq
 import org.rooftop.api.pay.payRegisterOrderReq
 import org.rooftop.api.shop.ProductRes
@@ -31,36 +31,45 @@ class OrderFacade(
             .order(orderReq)
             .createAndJoinTransaction()
             .registerOrderToPayServer()
+            .setTransactionToContext()
     }
 
     private fun startWithTransactionId(): Mono<String> {
-        return Mono.deferContextual<String> { Mono.just(it["transactionId"]) }
-            .contextWrite {
-                it.put("transactionId", transactionIdGenerator.generate())
-            }
+        return Mono.deferContextual { Mono.just(it["transactionId"]) }
     }
 
-    private fun <T> Mono<T>.existBuyer(userId: Long): Mono<UserGetByNameRes> {
-        return this.existUser(userId)
-    }
-
-    private fun Mono<ProductRes>.existSeller(): Mono<ProductRes> {
-        return this.flatMap { productRes ->
-            existUser(productRes.sellerId)
-                .map { productRes }
-        }
-    }
-
-    private fun <T> Mono<T>.existUser(userId: Long): Mono<UserGetByNameRes> {
+    private fun <T> Mono<T>.existBuyer(userId: Long): Mono<UserGetByIdRes> {
         return this.flatMap {
             identityWebClient.get()
                 .uri("/v1/users/$userId")
                 .exchangeToMono {
                     if (it.statusCode().is2xxSuccessful) {
-                        return@exchangeToMono it.bodyToMono<UserGetByNameRes>()
+                        return@exchangeToMono it.bodyToMono<UserGetByIdRes>()
+                    }
+                    if (it.statusCode().is4xxClientError) {
+                        return@exchangeToMono it.createError<UserGetByIdRes>()
+                            .onErrorMap { IllegalArgumentException("Cannot find user by id \"$userId\"") }
                     }
                     it.createError()
                 }
+        }
+    }
+
+    private fun Mono<ProductRes>.existSeller(): Mono<ProductRes> {
+        return this.flatMap { productRes ->
+            identityWebClient.get()
+                .uri("/v1/users/${productRes.sellerId}")
+                .exchangeToMono {
+                    if (it.statusCode().is2xxSuccessful) {
+                        return@exchangeToMono it.bodyToMono<UserGetByIdRes>()
+                    }
+                    if (it.statusCode().is4xxClientError) {
+                        return@exchangeToMono it.createError<UserGetByIdRes>()
+                            .onErrorMap { IllegalArgumentException("Cannot find user by id \"${productRes.sellerId}\"") }
+                    }
+                    it.createError()
+                }
+                .map { productRes }
         }
     }
 
@@ -71,6 +80,10 @@ class OrderFacade(
                 .exchangeToMono {
                     if (it.statusCode().is2xxSuccessful) {
                         return@exchangeToMono it.bodyToMono<ProductRes>()
+                    }
+                    if (it.statusCode().is4xxClientError) {
+                        return@exchangeToMono it.createError<ProductRes>()
+                            .onErrorMap { IllegalArgumentException("Cannot find product by id \"$productId\"") }
                     }
                     it.createError()
                 }
@@ -108,11 +121,17 @@ class OrderFacade(
                         }.toByteArray())
                         .exchangeToMono {
                             if (it.statusCode().is2xxSuccessful) {
-                                return@exchangeToMono it.bodyToMono<Unit>()
+                                return@exchangeToMono Mono.just(it.statusCode().value())
                             }
                             it.createError()
                         }
                 }.map { order }
+        }
+    }
+
+    private fun <T> Mono<T>.setTransactionToContext(): Mono<T> {
+        return this.contextWrite {
+            it.put("transactionId", transactionIdGenerator.generate())
         }
     }
 }
