@@ -15,8 +15,6 @@ import org.rooftop.order.server.MockIdentityServer
 import org.rooftop.order.server.MockPayServer
 import org.rooftop.order.server.MockShopServer
 import org.rooftop.shop.infra.transaction.RedisContainerConfigurer
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration
-import org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
@@ -35,7 +33,6 @@ import reactor.test.StepVerifier
         RedisContainerConfigurer::class,
     ]
 )
-@EnableAutoConfiguration(exclude = [RedisReactiveAutoConfiguration::class])
 internal class OrderFacadeTest(
     private val orderFacade: OrderFacade,
     private val mockPayServer: MockPayServer,
