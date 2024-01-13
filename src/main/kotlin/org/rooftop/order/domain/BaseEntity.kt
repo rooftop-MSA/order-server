@@ -12,11 +12,11 @@ abstract class BaseEntity(
 
     @CreatedDate
     @Column("created_at")
-    protected var createdAt: Instant? = null,
+    var createdAt: Instant? = null,
 
     @LastModifiedDate
     @Column("modified_at")
-    protected var modifiedAt: Instant? = null,
+    var modifiedAt: Instant? = null,
 ) : Persistable<Long> {
 
     abstract override fun getId(): Long

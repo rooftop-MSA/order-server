@@ -52,7 +52,13 @@ internal class OrderFacadeTest(
 
                 StepVerifier.create(result)
                     .assertNext {
-                        it.shouldBeEqualToIgnoringFields(order, Order::id, Order::userId)
+                        it.shouldBeEqualToIgnoringFields(
+                            order,
+                            Order::id,
+                            Order::userId,
+                            Order::modifiedAt,
+                            Order::createdAt
+                        )
                     }
                     .verifyComplete()
             }
