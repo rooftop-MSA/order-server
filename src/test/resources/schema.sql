@@ -1,5 +1,6 @@
 create table if not exists orders(
   id bigint primary key,
+  user_id bigint not null,
   product_id bigint not null,
   product_quantity int not null check(product_quantity > 0),
   total_price bigint not null check(total_price > 0),

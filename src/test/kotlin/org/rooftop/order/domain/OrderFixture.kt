@@ -2,11 +2,13 @@ package org.rooftop.order.domain
 
 fun order(
     id: Long = 1L,
+    userId: Long = 2L,
     orderProduct: OrderProduct = orderProduct(),
     state: OrderState = OrderState.PENDING,
     isNew: Boolean = true,
 ): Order = Order(
     id = id,
+    userId = userId,
     orderProduct = orderProduct,
     state = state,
     isNew = isNew

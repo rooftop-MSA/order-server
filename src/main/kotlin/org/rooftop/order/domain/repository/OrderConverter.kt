@@ -23,6 +23,7 @@ class OrderConverter {
         override fun convert(source: Row): Order {
             return Order(
                 id = source["id"] as Long,
+                userId = source["user_id"] as Long,
                 OrderProduct(
                     productId = source["product_id"] as Long,
                     productQuantity = source["product_quantity"] as Int,

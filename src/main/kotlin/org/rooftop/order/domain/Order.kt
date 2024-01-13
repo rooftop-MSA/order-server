@@ -15,6 +15,9 @@ class Order(
     @Column("id")
     private val id: Long,
 
+    @Column("user_id")
+    private val userId: Long,
+
     @Transient
     private val orderProduct: OrderProduct,
 
@@ -33,12 +36,13 @@ class Order(
     @PersistenceCreator
     constructor(
         id: Long,
+        userId: Long,
         orderProduct: OrderProduct,
         state: OrderState,
         version: Int,
         createdAt: Instant,
         modifiedAt: Instant,
-    ) : this(id, orderProduct, state, false, version, createdAt, modifiedAt)
+    ) : this(id, userId, orderProduct, state, false, version, createdAt, modifiedAt)
 
     override fun getId(): Long = id
 
@@ -46,6 +50,7 @@ class Order(
     fun toOutboundRow(): OutboundRow {
         return OutboundRow()
             .append("id", Parameter.from(id))
+            .append("user_id", Parameter.from(userId))
             .append("product_id", Parameter.from(orderProduct.productId))
             .append("product_quantity", Parameter.from(orderProduct.productQuantity))
             .append("total_price", Parameter.from(orderProduct.totalPrice))

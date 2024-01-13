@@ -30,6 +30,7 @@ class OrderService(
             createOrder(orderReq, product)
             Order(
                 id = idGenerator.generate(),
+                userId = orderReq.userId,
                 orderProduct = OrderProduct(
                     productId = product.id,
                     productQuantity = orderReq.quantity,
