@@ -5,8 +5,8 @@ import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import org.rooftop.order.app.TransactionIdGenerator
-import org.rooftop.order.app.undoOrder
 import org.rooftop.order.domain.OrderRollbackEvent
+import org.rooftop.order.domain.order
 import org.rooftop.order.infra.transaction.*
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
@@ -39,7 +39,7 @@ internal class OrderTransactionListenerTest(
             val transactionId = transactionIdGenerator.generate()
 
             it("OrderRollbackEvent 를 발행한다.") {
-                transactionPublisher.join(transactionId, undoOrder()).block()
+                transactionPublisher.join(transactionId, order()).block()
                 transactionPublisher.rollback(transactionId).block()
 
                 eventually(10.seconds) {
@@ -54,8 +54,8 @@ internal class OrderTransactionListenerTest(
             val transactionId2 = transactionIdGenerator.generate()
 
             it("동시에 요청을 읽을 수 있다.") {
-                transactionPublisher.join(transactionId1, undoOrder()).block()
-                transactionPublisher.join(transactionId2, undoOrder()).block()
+                transactionPublisher.join(transactionId1, order()).block()
+                transactionPublisher.join(transactionId2, order()).block()
 
                 transactionPublisher.rollback(transactionId1).block()
                 transactionPublisher.rollback(transactionId2).block()
@@ -72,8 +72,8 @@ internal class OrderTransactionListenerTest(
             val transactionId2 = transactionIdGenerator.generate()
 
             it("등록된 transaction을 읽을 수 있다.") {
-                transactionPublisher.join(transactionId1, undoOrder()).block()
-                transactionPublisher.join(transactionId2, undoOrder()).block()
+                transactionPublisher.join(transactionId1, order()).block()
+                transactionPublisher.join(transactionId2, order()).block()
 
                 Thread.sleep(5000)
 

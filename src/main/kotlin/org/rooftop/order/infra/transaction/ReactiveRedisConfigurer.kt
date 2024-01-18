@@ -2,7 +2,6 @@ package org.rooftop.order.infra.transaction
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
-import org.rooftop.order.app.UndoOrder
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

@@ -5,8 +5,8 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import org.rooftop.order.app.TransactionIdGenerator
 import org.rooftop.order.app.TransactionPublisher
-import org.rooftop.order.app.UndoOrder
-import org.rooftop.order.app.undoOrder
+import org.rooftop.order.domain.Order
+import org.rooftop.order.domain.order
 import org.rooftop.order.infra.transaction.ByteArrayRedisSerializer
 import org.rooftop.order.infra.transaction.OrderTransactionPublisher
 import org.rooftop.order.infra.transaction.ReactiveRedisConfigurer
@@ -28,17 +28,17 @@ import reactor.test.StepVerifier
 @TestPropertySource("classpath:application.properties")
 internal class OrderTransactionPublisherTest(
     private val transactionIdGenerator: TransactionIdGenerator,
-    private val transactionPublisher: TransactionPublisher<UndoOrder>,
+    private val transactionPublisher: TransactionPublisher<Order>,
 ) : DescribeSpec({
 
     describe("join 메소드는") {
         context("undoServer 와 transactionServer 에 저장을 성공하면,") {
 
-            val undoOrder = undoOrder()
+            val order = order()
             val transactionId = transactionIdGenerator.generate()
 
             it("새로운 트랜잭션을 만들고, 생성된 트랜잭션의 id를 리턴한다.") {
-                val result = transactionPublisher.join(transactionId, undoOrder)
+                val result = transactionPublisher.join(transactionId, order)
                     .log()
 
                 StepVerifier.create(result)
@@ -54,7 +54,7 @@ internal class OrderTransactionPublisherTest(
         context("transactionId에 해당하는 transaction에 join한 적이 있으면,") {
 
             val transactionId = transactionIdGenerator.generate()
-            transactionPublisher.join(transactionId, undoOrder()).block()
+            transactionPublisher.join(transactionId, order()).block()
 
             it("transactionServer에 COMMIT 상태의 트랜잭션을 publish 한다.") {
                 val result = transactionPublisher.commit(transactionId).log()
@@ -83,7 +83,7 @@ internal class OrderTransactionPublisherTest(
         context("transactionId에 해당하는 transaction에 join한 적이 있으면,") {
 
             val transactionId = transactionIdGenerator.generate()
-            transactionPublisher.join(transactionId, undoOrder()).block()
+            transactionPublisher.join(transactionId, order()).block()
 
             it("transactionServer에 ROLLBACK 상태의 트랜잭션을 publish 한다.") {
                 val result = transactionPublisher.rollback(transactionId).log()

@@ -6,7 +6,6 @@ import org.rooftop.api.pay.payRegisterOrderReq
 import org.rooftop.api.shop.ProductRes
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.OrderService
-import org.rooftop.order.domain.OrderState
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -17,7 +16,7 @@ import reactor.core.publisher.Mono
 class OrderFacade(
     private val orderService: OrderService,
     private val transactionIdGenerator: TransactionIdGenerator,
-    private val orderTransactionPublisher: TransactionPublisher<UndoOrder>,
+    private val orderTransactionPublisher: TransactionPublisher<Order>,
     @Qualifier("payWebClient") private val payWebClient: WebClient,
     @Qualifier("shopWebClient") private val shopWebClient: WebClient,
     @Qualifier("identityWebClient") private val identityWebClient: WebClient,
@@ -100,10 +99,7 @@ class OrderFacade(
         return this.flatMap { order ->
             Mono.deferContextual<String> { Mono.just(it["transactionId"]) }
                 .flatMap { transactionId ->
-                    orderTransactionPublisher.join(
-                        transactionId,
-                        UndoOrder(order.id, OrderState.FAIL)
-                    )
+                    orderTransactionPublisher.join(transactionId, order)
                 }
                 .map { order }
         }

@@ -2,7 +2,6 @@ package org.rooftop.order.infra.transaction
 
 import org.rooftop.api.transaction.Transaction
 import org.rooftop.api.transaction.TransactionState
-import org.rooftop.order.app.UndoOrder
 import org.rooftop.order.domain.OrderRollbackEvent
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationEventPublisher
