@@ -46,6 +46,8 @@ class Order(
 
     override fun getId(): Long = id
 
+    fun totalPrice(): Long = orderProduct.totalPrice
+
     @Suppress("DEPRECATION")
     fun toOutboundRow(): OutboundRow {
         return OutboundRow()
