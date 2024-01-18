@@ -117,7 +117,9 @@ class OrderFacade(
                         .uri("/v1/pays/orders")
                         .bodyValue(payRegisterOrderReq {
                             this.orderId = order.id
+                            this.userId = order.userId
                             this.transactionId = transactionId
+                            this.price = order.totalPrice()
                         }.toByteArray())
                         .exchangeToMono {
                             if (it.statusCode().is2xxSuccessful) {
