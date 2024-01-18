@@ -48,6 +48,19 @@ class Order(
 
     fun totalPrice(): Long = orderProduct.totalPrice
 
+    fun fail(): Order {
+        return Order(
+            id = id,
+            userId = userId,
+            orderProduct = orderProduct,
+            state = OrderState.FAILED,
+            isNew = isNew,
+            version = version,
+            createdAt = createdAt,
+            modifiedAt = modifiedAt,
+        )
+    }
+
     @Suppress("DEPRECATION")
     fun toOutboundRow(): OutboundRow {
         return OutboundRow()

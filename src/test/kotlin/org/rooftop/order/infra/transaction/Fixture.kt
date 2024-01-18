@@ -5,5 +5,5 @@ import org.rooftop.order.infra.transaction.UndoOrder
 
 fun undoOrder(
     id: Long = 1L,
-    orderState: OrderState = OrderState.FAIL,
+    orderState: OrderState = OrderState.FAILED,
 ): UndoOrder = UndoOrder(id, orderState)

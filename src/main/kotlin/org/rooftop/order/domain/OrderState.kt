@@ -4,5 +4,5 @@ enum class OrderState {
 
     PENDING,
     SUCCESS,
-    FAIL,
+    FAILED,
 }
