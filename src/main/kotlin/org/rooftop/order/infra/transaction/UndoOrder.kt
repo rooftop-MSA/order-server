@@ -1,4 +1,4 @@
-package org.rooftop.order.app
+package org.rooftop.order.infra.transaction
 
 import org.rooftop.order.domain.OrderState
 
