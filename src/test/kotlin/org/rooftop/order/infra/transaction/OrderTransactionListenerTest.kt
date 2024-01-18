@@ -65,6 +65,26 @@ internal class OrderTransactionListenerTest(
                 }
             }
         }
+
+        context("몇초가 흐른후 transaction이 rollback되어도") {
+
+            val transactionId1 = transactionIdGenerator.generate()
+            val transactionId2 = transactionIdGenerator.generate()
+
+            it("등록된 transaction을 읽을 수 있다.") {
+                transactionPublisher.join(transactionId1, undoOrder()).block()
+                transactionPublisher.join(transactionId2, undoOrder()).block()
+
+                Thread.sleep(5000)
+
+                transactionPublisher.rollback(transactionId1).block()
+                transactionPublisher.rollback(transactionId2).block()
+
+                eventually(10.seconds) {
+                    eventCapture.capturedCount(OrderRollbackEvent::class) shouldBeEqual 2
+                }
+            }
+        }
     }
 
 })
