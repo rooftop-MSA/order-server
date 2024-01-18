@@ -24,18 +24,17 @@ class OrderTransactionListener(
 ) {
 
     @EventListener(TransactionJoinedEvent::class)
-    fun subscribeStream(transactionJoinedEvent: TransactionJoinedEvent) {
+    fun subscribeStream(transactionJoinedEvent: TransactionJoinedEvent): Flux<Transaction> {
         val options = StreamReceiverOptions.builder()
             .pollTimeout(java.time.Duration.ofMillis(100))
             .build()
 
         val receiver = StreamReceiver.create(connectionFactory, options)
 
-        receiver.receive(StreamOffset.fromStart(transactionJoinedEvent.transactionId))
+        return receiver.receive(StreamOffset.fromStart(transactionJoinedEvent.transactionId))
             .subscribeOn(Schedulers.boundedElastic())
             .map { Transaction.parseFrom(it.value["data"]?.toByteArray()) }
             .dispatch()
-            .subscribe()
     }
 
     private fun Flux<Transaction>.dispatch(): Flux<Transaction> {
