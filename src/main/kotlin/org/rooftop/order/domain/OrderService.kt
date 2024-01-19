@@ -42,7 +42,7 @@ class OrderService(
     }
 
     @Transactional
-    fun confirmOrder(orderConfirmReq: OrderConfirmReq): Mono<Unit> {
+    fun confirmOrder(orderConfirmReq: OrderConfirmReq): Mono<Order> {
         return orderRepository.findById(orderConfirmReq.orderId)
             .switchIfEmpty(
                 Mono.error {
@@ -52,7 +52,6 @@ class OrderService(
             .isPending()
             .changeState(orderConfirmReq)
             .flatMap { orderRepository.save(it) }
-            .map { }
     }
 
     private fun Mono<Order>.isPending(): Mono<Order> {

@@ -3,6 +3,7 @@ package org.rooftop.order.domain
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.equality.shouldBeEqualUsingFields
 import io.mockk.every
 import org.rooftop.api.order.ConfirmState
 import org.rooftop.api.order.orderConfirmReq
@@ -19,7 +20,7 @@ internal class OrderServiceTest(
     @MockkBean private val orderRepository: OrderRepository,
 ) : DescribeSpec({
 
-    every { orderRepository.save(any()) } returns Mono.just(order())
+    every { orderRepository.save(any()) } returns Mono.just(pendingOrder.success())
     every { orderRepository.findById(PENDING_ORDER_ID) } returns Mono.just(pendingOrder)
     every { orderRepository.findById(SUCCESS_ORDER_ID) } returns Mono.just(successOrder)
 
@@ -35,7 +36,9 @@ internal class OrderServiceTest(
                 val result = orderService.confirmOrder(orderConfirmReq)
 
                 StepVerifier.create(result)
-                    .expectNext(Unit)
+                    .assertNext {
+                        it shouldBeEqualUsingFields pendingOrder.success()
+                    }
                     .verifyComplete()
             }
         }
