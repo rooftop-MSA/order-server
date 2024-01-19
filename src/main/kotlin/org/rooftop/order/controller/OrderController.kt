@@ -39,6 +39,7 @@ class OrderController(
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgumentException(illegalArgumentException: IllegalArgumentException): Mono<ErrorRes> {
+        println(">>> ${illegalArgumentException.message}")
         return Mono.fromCallable {
             errorRes {
                 this.message = illegalArgumentException.message!!

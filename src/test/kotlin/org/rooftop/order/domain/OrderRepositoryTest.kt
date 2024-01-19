@@ -2,7 +2,8 @@ package org.rooftop.order.domain
 
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.equality.shouldBeEqualToIgnoringFields
+import io.kotest.matchers.equality.FieldsEqualityCheckConfig
+import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import org.rooftop.order.domain.repository.OrderRepository
 import org.rooftop.order.domain.repository.R2dbcConfigurer
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest
@@ -23,10 +24,10 @@ internal class OrderRepositoryTest(private val orderRepository: OrderRepository)
 
                 StepVerifier.create(result)
                     .assertNext {
-                        it.shouldBeEqualToIgnoringFields(
-                            exists,
-                            Order::createdAt,
-                            Order::modifiedAt
+                        it.shouldBeEqualToComparingFields(
+                            exists, FieldsEqualityCheckConfig(
+                                propertiesToExclude = listOf(Order::createdAt, Order::modifiedAt)
+                            )
                         )
                     }
                     .verifyComplete()
