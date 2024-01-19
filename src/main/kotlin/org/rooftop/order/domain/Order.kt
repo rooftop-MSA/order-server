@@ -19,7 +19,7 @@ class Order(
     val userId: Long,
 
     @Transient
-    private val orderProduct: OrderProduct,
+    val orderProduct: OrderProduct,
 
     @Column("state")
     val state: OrderState,

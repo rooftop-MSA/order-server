@@ -16,7 +16,7 @@ fun order(
 
 fun orderProduct(
     productId: Long = 2L,
-    productQuantity: Int = 100,
+    productQuantity: Long = 100,
     totalPrice: Long = 10_000_000,
 ): OrderProduct = OrderProduct(
     productId = productId,
