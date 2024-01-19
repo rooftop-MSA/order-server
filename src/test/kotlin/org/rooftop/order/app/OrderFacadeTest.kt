@@ -137,7 +137,7 @@ internal class OrderFacadeTest(
             userId = USER_ID,
             orderProduct = orderProduct(
                 productId = productRes.id,
-                productQuantity = productRes.quantity.toInt(),
+                productQuantity = productRes.quantity,
                 totalPrice = productRes.quantity * productRes.price
             )
         )

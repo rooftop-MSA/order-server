@@ -26,7 +26,7 @@ class OrderConverter {
                 userId = source["user_id"] as Long,
                 OrderProduct(
                     productId = source["product_id"] as Long,
-                    productQuantity = source["product_quantity"] as Int,
+                    productQuantity = source["product_quantity"] as Long,
                     totalPrice = source["total_price"] as Long
                 ),
                 state = OrderState.valueOf(source["state"] as String),

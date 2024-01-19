@@ -96,7 +96,7 @@ class OrderTransactionManager(
             .next()
             .switchIfEmpty(
                 Mono.error {
-                    IllegalStateException("Cannot find opened transaction id \"$transactionId\"")
+                    throw IllegalStateException("Cannot find opened transaction id \"$transactionId\"")
                 }
             )
             .transformTransactionId()
