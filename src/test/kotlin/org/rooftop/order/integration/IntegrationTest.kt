@@ -4,7 +4,9 @@ import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import org.rooftop.api.identity.userGetByIdRes
+import org.rooftop.api.order.ConfirmState
 import org.rooftop.api.order.OrderRes
+import org.rooftop.api.order.orderConfirmReq
 import org.rooftop.api.order.orderReq
 import org.rooftop.api.shop.productRes
 import org.rooftop.order.Application
@@ -93,6 +95,30 @@ internal class IntegrationTest(
                 val result = api.order(VALID_TOKEN, orderReq)
 
                 result.expectStatus().isBadRequest
+            }
+        }
+    }
+
+    describe("주문 확정 API는") {
+        context("PENDING 상태인 주문을 확정하는 요청이 들어올 경우,") {
+
+            mockIdentityServer.enqueue200(userGetByIdRes, sellerGetByIdRes)
+            mockShopServer.enqueue200(productRes)
+            mockPayServer.enqueue200()
+
+            val orderId = api.order(VALID_TOKEN, orderReq).expectBody(OrderRes::class.java)
+                .returnResult().responseBody!!.orderId
+
+            val orderConfirmReq = orderConfirmReq {
+                this.transactionId = "NONE"
+                this.orderId = orderId
+                this.confirmState = ConfirmState.CONFIRM_STATE_SUCCESS
+            }
+
+            it("200 Ok 를 응답한다.") {
+                val result = api.confirmOrder(VALID_TOKEN, orderConfirmReq)
+
+                result.expectStatus().isOk
             }
         }
     }

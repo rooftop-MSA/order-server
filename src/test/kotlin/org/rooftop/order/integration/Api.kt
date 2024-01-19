@@ -1,5 +1,6 @@
 package org.rooftop.order.integration
 
+import org.rooftop.api.order.OrderConfirmReq
 import org.rooftop.api.order.OrderReq
 import org.springframework.http.HttpHeaders
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -11,5 +12,13 @@ fun WebTestClient.order(token: String, orderReq: OrderReq): ResponseSpec {
         .header(HttpHeaders.AUTHORIZATION, token)
         .header(HttpHeaders.CONTENT_TYPE, "application/x-protobuf")
         .bodyValue(orderReq.toByteArray())
+        .exchange()
+}
+
+fun WebTestClient.confirmOrder(token: String, orderConfirmReq: OrderConfirmReq): ResponseSpec {
+    return this.post()
+        .uri("/v1/orders/confirms")
+        .header(HttpHeaders.CONTENT_TYPE, "application/x-protobuf")
+        .bodyValue(orderConfirmReq.toByteArray())
         .exchange()
 }
