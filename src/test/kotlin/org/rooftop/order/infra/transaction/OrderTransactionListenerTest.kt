@@ -20,7 +20,7 @@ import kotlin.time.Duration.Companion.seconds
         ByteArrayRedisSerializer::class,
         ReactiveRedisConfigurer::class,
         TsidTransactionIdGenerator::class,
-        OrderTransactionPublisher::class,
+        OrderTransactionManager::class,
         OrderTransactionListener::class,
     ]
 )
@@ -28,7 +28,7 @@ import kotlin.time.Duration.Companion.seconds
 internal class OrderTransactionListenerTest(
     private val eventCapture: EventCapture,
     private val transactionIdGenerator: TransactionIdGenerator,
-    private val transactionPublisher: OrderTransactionPublisher,
+    private val transactionPublisher: OrderTransactionManager,
 ) : DescribeSpec({
 
     afterEach { eventCapture.clear() }

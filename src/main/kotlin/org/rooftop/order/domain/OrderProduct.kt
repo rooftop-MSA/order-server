@@ -2,6 +2,6 @@ package org.rooftop.order.domain
 
 class OrderProduct(
     val productId: Long,
-    val productQuantity: Int,
+    val productQuantity: Long,
     val totalPrice: Long,
 )

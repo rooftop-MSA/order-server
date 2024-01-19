@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono
 class OrderFacade(
     private val orderService: OrderService,
     private val transactionIdGenerator: TransactionIdGenerator,
-    private val orderTransactionPublisher: TransactionPublisher<Order>,
+    private val orderTransactionManager: TransactionManager<Order>,
     @Qualifier("payWebClient") private val payWebClient: WebClient,
     @Qualifier("shopWebClient") private val shopWebClient: WebClient,
     @Qualifier("identityWebClient") private val identityWebClient: WebClient,
@@ -99,7 +99,7 @@ class OrderFacade(
         return this.flatMap { order ->
             Mono.deferContextual<String> { Mono.just(it["transactionId"]) }
                 .flatMap { transactionId ->
-                    orderTransactionPublisher.join(transactionId, order)
+                    orderTransactionManager.join(transactionId, order)
                 }
                 .map { order }
         }

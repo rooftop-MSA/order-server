@@ -2,7 +2,8 @@ package org.rooftop.order.app
 
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.equality.shouldBeEqualToIgnoringFields
+import io.kotest.matchers.equality.FieldsEqualityCheckConfig
+import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import org.rooftop.api.identity.userGetByIdRes
 import org.rooftop.api.order.orderReq
 import org.rooftop.api.shop.productRes
@@ -52,12 +53,16 @@ internal class OrderFacadeTest(
 
                 StepVerifier.create(result)
                     .assertNext {
-                        it.shouldBeEqualToIgnoringFields(
+                        it.shouldBeEqualToComparingFields(
                             order,
-                            Order::id,
-                            Order::userId,
-                            Order::modifiedAt,
-                            Order::createdAt
+                            FieldsEqualityCheckConfig(
+                                propertiesToExclude = listOf(
+                                    Order::id,
+                                    Order::userId,
+                                    Order::modifiedAt,
+                                    Order::createdAt
+                                )
+                            )
                         )
                     }
                     .verifyComplete()
@@ -137,7 +142,7 @@ internal class OrderFacadeTest(
             userId = USER_ID,
             orderProduct = orderProduct(
                 productId = productRes.id,
-                productQuantity = productRes.quantity.toInt(),
+                productQuantity = productRes.quantity,
                 totalPrice = productRes.quantity * productRes.price
             )
         )
