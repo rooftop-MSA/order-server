@@ -22,7 +22,7 @@ class Order(
     private val orderProduct: OrderProduct,
 
     @Column("state")
-    private val state: OrderState,
+    val state: OrderState,
 
     @Transient
     private val isNew: Boolean = false,
@@ -48,12 +48,21 @@ class Order(
 
     fun totalPrice(): Long = orderProduct.totalPrice
 
-    fun fail(): Order {
+    fun fail(): Order = copy(state = OrderState.FAILED)
+
+    fun success(): Order = copy(state = OrderState.SUCCESS)
+
+    private fun copy(
+        id: Long = this.id,
+        userId: Long = this.userId,
+        orderProduct: OrderProduct = this.orderProduct,
+        state: OrderState = this.state,
+    ): Order {
         return Order(
             id = id,
             userId = userId,
             orderProduct = orderProduct,
-            state = OrderState.FAILED,
+            state = state,
             isNew = isNew,
             version = version,
             createdAt = createdAt,

@@ -1,5 +1,7 @@
 package org.rooftop.order.domain
 
+import org.rooftop.api.order.ConfirmState
+import org.rooftop.api.order.OrderConfirmReq
 import org.rooftop.api.order.OrderReq
 import org.rooftop.api.shop.ProductRes
 import org.rooftop.order.domain.repository.OrderRepository
@@ -17,7 +19,7 @@ class OrderService(
 
     @Transactional
     fun order(orderReq: OrderReq, product: ProductRes): Mono<Order> {
-        return orderRepository.save(createOrder(orderReq, product))
+        return orderRepository.save(toOrder(orderReq, product))
             .switchIfEmpty(
                 Mono.error {
                     throw IllegalStateException("Cannot save order")
@@ -25,7 +27,7 @@ class OrderService(
             )
     }
 
-    private fun createOrder(orderReq: OrderReq, product: ProductRes): Order {
+    private fun toOrder(orderReq: OrderReq, product: ProductRes): Order {
         return Order(
             id = idGenerator.generate(),
             userId = orderReq.userId,
@@ -37,6 +39,39 @@ class OrderService(
             state = OrderState.PENDING,
             isNew = true,
         )
+    }
+
+    @Transactional
+    fun confirmOrder(orderConfirmReq: OrderConfirmReq): Mono<Unit> {
+        return orderRepository.findById(orderConfirmReq.orderId)
+            .switchIfEmpty(
+                Mono.error {
+                    throw IllegalArgumentException("Cannot find exists order by id \"${orderConfirmReq.orderId}\"")
+                }
+            )
+            .isPending()
+            .changeState(orderConfirmReq)
+            .flatMap { orderRepository.save(it) }
+            .map { }
+    }
+
+    private fun Mono<Order>.isPending(): Mono<Order> {
+        return this.map {
+            when (it.state) {
+                OrderState.PENDING -> it
+                else -> throw IllegalArgumentException("Cannot change order state cause \"${it.id}\" order state is not PENDING")
+            }
+        }
+    }
+
+    private fun Mono<Order>.changeState(orderConfirmReq: OrderConfirmReq): Mono<Order> {
+        return this.map {
+            when (orderConfirmReq.confirmState) {
+                ConfirmState.CONFIRM_STATE_SUCCESS -> it.success()
+                ConfirmState.CONFIRM_STATE_FAILED -> it.fail()
+                else -> throw IllegalArgumentException("Cannot find matched order state \"${orderConfirmReq.confirmState}\"")
+            }
+        }
     }
 
     @Transactional
