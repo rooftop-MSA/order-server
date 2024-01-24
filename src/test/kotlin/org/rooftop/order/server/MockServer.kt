@@ -4,6 +4,8 @@ import com.google.protobuf.MessageLite
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
+import org.springframework.context.event.ContextClosedEvent
+import org.springframework.context.event.EventListener
 
 abstract class MockServer {
 
@@ -38,4 +40,7 @@ abstract class MockServer {
             MockResponse().setResponseCode(400)
         )
     }
+
+    @EventListener(ContextClosedEvent::class)
+    fun shutDown() = mockWebSerer.shutdown()
 }
