@@ -14,10 +14,10 @@ import org.rooftop.api.shop.productRes
 import org.rooftop.order.Application
 import org.rooftop.order.app.TransactionIdGenerator
 import org.rooftop.order.domain.repository.R2dbcConfigurer
+import org.rooftop.order.infra.transaction.RedisContainerConfigurer
 import org.rooftop.order.server.MockIdentityServer
 import org.rooftop.order.server.MockPayServer
 import org.rooftop.order.server.MockShopServer
-import org.rooftop.shop.infra.transaction.RedisContainerConfigurer
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate

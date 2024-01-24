@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 
 @Service
 class OrderConfirmFacade(
@@ -21,9 +22,9 @@ class OrderConfirmFacade(
     fun confirmOrder(orderConfirmReq: OrderConfirmReq): Mono<Unit> {
         return transactionManager.exists(orderConfirmReq.transactionId)
             .flatMap { orderService.confirmOrder(orderConfirmReq) }
+            .commitOnSuccess(orderConfirmReq)
+            .rollbackOnError(orderConfirmReq)
             .consumeProduct(orderConfirmReq.transactionId)
-            .doOnSuccess { transactionManager.commit(orderConfirmReq.transactionId) }
-            .doOnError { transactionManager.rollback(orderConfirmReq.transactionId) }
             .map { }
     }
 
@@ -47,6 +48,22 @@ class OrderConfirmFacade(
             this.transactionId = transactionId
             this.productId = order.orderProduct.productId
             this.consumeQuantity = order.orderProduct.productQuantity
+        }
+    }
+
+    private fun <T> Mono<T>.commitOnSuccess(orderConfirmReq: OrderConfirmReq): Mono<T> {
+        return this.doOnSuccess {
+            transactionManager.commit(orderConfirmReq.transactionId)
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe()
+        }
+    }
+
+    private fun <T> Mono<T>.rollbackOnError(orderConfirmReq: OrderConfirmReq): Mono<T> {
+        return this.doOnError {
+            transactionManager.rollback(orderConfirmReq.transactionId)
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe()
         }
     }
 }

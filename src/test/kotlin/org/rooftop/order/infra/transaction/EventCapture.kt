@@ -1,4 +1,4 @@
-package org.rooftop.shop.infra.transaction
+package org.rooftop.order.infra.transaction
 
 import org.springframework.boot.test.context.TestComponent
 import org.springframework.context.event.EventListener
@@ -8,7 +8,6 @@ import kotlin.reflect.KClass
 class EventCapture {
 
     private val eventCapture: MutableMap<KClass<out Any>, Long> = mutableMapOf()
-    private lateinit var behavior: (Any) -> Unit
 
     fun clear() {
         eventCapture.clear()

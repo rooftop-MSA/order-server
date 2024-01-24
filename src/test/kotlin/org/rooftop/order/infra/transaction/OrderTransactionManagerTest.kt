@@ -1,4 +1,4 @@
-package org.rooftop.shop.infra.transaction
+package org.rooftop.order.infra.transaction
 
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
