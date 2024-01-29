@@ -1,12 +1,14 @@
 package org.rooftop.order.app
 
 import org.rooftop.api.identity.UserGetByIdRes
+import org.rooftop.api.identity.UserGetByTokenRes
 import org.rooftop.api.order.OrderReq
 import org.rooftop.api.pay.payRegisterOrderReq
 import org.rooftop.api.shop.ProductRes
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.OrderService
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
@@ -22,11 +24,11 @@ class OrderFacade(
     @Qualifier("identityWebClient") private val identityWebClient: WebClient,
 ) {
 
-    fun order(orderReq: OrderReq): Mono<Order> {
+    fun order(token: String, orderReq: OrderReq): Mono<Order> {
         return startWithTransactionId()
             .existBuyer(orderReq.userId)
+            .isAuthorizedBuyer(token)
             .existProduct(orderReq.productId)
-            .existSeller()
             .order(orderReq)
             .createAndJoinTransaction()
             .registerOrderToPayServer()
@@ -54,21 +56,29 @@ class OrderFacade(
         }
     }
 
-    private fun Mono<ProductRes>.existSeller(): Mono<ProductRes> {
-        return this.flatMap { productRes ->
+    private fun Mono<UserGetByIdRes>.isAuthorizedBuyer(token: String): Mono<UserGetByIdRes> {
+        return this.flatMap { buyer ->
             identityWebClient.get()
-                .uri("/v1/users/${productRes.sellerId}")
-                .exchangeToMono {
+                .uri("/v1/users/tokens")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchangeToMono<UserGetByTokenRes?> {
                     if (it.statusCode().is2xxSuccessful) {
-                        return@exchangeToMono it.bodyToMono<UserGetByIdRes>()
+                        return@exchangeToMono it.bodyToMono<UserGetByTokenRes>()
                     }
                     if (it.statusCode().is4xxClientError) {
-                        return@exchangeToMono it.createError<UserGetByIdRes>()
-                            .onErrorMap { IllegalArgumentException("Cannot find user by id \"${productRes.sellerId}\"") }
+                        return@exchangeToMono it.createError<UserGetByTokenRes>()
+                            .onErrorMap {
+                                IllegalArgumentException("Cannot find user by token")
+                            }
                     }
                     it.createError()
                 }
-                .map { productRes }
+                .map { token ->
+                    when (token.id == buyer.id) {
+                        true -> buyer
+                        false -> throw IllegalArgumentException("Authorization could not be verified because the buyer and token do not match.")
+                    }
+                }
         }
     }
 
