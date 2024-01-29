@@ -8,6 +8,7 @@ import org.rooftop.api.order.OrderRes
 import org.rooftop.api.order.orderRes
 import org.rooftop.order.app.OrderConfirmFacade
 import org.rooftop.order.app.OrderFacade
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
@@ -21,8 +22,11 @@ class OrderController(
 
     @PostMapping("/orders")
     @ResponseStatus(HttpStatus.OK)
-    fun order(@RequestBody orderReq: OrderReq): Mono<OrderRes> {
-        return orderFacade.order(orderReq)
+    fun order(
+        @RequestHeader(HttpHeaders.AUTHORIZATION) token: String,
+        @RequestBody orderReq: OrderReq,
+    ): Mono<OrderRes> {
+        return orderFacade.order(token, orderReq)
             .map {
                 orderRes {
                     this.orderId = it.id

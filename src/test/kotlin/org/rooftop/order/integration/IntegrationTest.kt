@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import io.mockk.every
 import org.rooftop.api.identity.userGetByIdRes
+import org.rooftop.api.identity.userGetByTokenRes
 import org.rooftop.api.order.ConfirmState
 import org.rooftop.api.order.OrderRes
 import org.rooftop.api.order.orderConfirmReq
@@ -55,7 +56,7 @@ internal class IntegrationTest(
     describe("주문 API는") {
         context("상품의 id, 수량, 구매자 id가 들어올 경우,") {
 
-            mockIdentityServer.enqueue200(userGetByIdRes, sellerGetByIdRes)
+            mockIdentityServer.enqueue200(userGetByIdRes, userGetByTokenRes)
             mockShopServer.enqueue200(productRes)
             mockPayServer.enqueue200()
 
@@ -81,21 +82,8 @@ internal class IntegrationTest(
 
         context("존재하지 않는 product의 id가 들어올 경우,") {
 
-            mockIdentityServer.enqueue200(userGetByIdRes)
+            mockIdentityServer.enqueue200(userGetByIdRes, userGetByTokenRes)
             mockShopServer.enqueue400()
-
-            it("400 Bad Request를 응답한다.") {
-                val result = api.order(VALID_TOKEN, orderReq)
-
-                result.expectStatus().isBadRequest
-            }
-        }
-
-        context("존재하지 않는 seller의 id가 들어올 경우,") {
-
-            mockIdentityServer.enqueue200(userGetByIdRes)
-            mockShopServer.enqueue200(productRes)
-            mockIdentityServer.enqueue400()
 
             it("400 Bad Request를 응답한다.") {
                 val result = api.order(VALID_TOKEN, orderReq)
@@ -110,7 +98,7 @@ internal class IntegrationTest(
 
             every { transactionIdGenerator.generate() } returns "1"
 
-            mockIdentityServer.enqueue200(userGetByIdRes, sellerGetByIdRes)
+            mockIdentityServer.enqueue200(userGetByIdRes, userGetByTokenRes)
             mockShopServer.enqueue200(productRes)
             mockShopServer.enqueue200()
             mockPayServer.enqueue200()
@@ -143,9 +131,9 @@ internal class IntegrationTest(
             this.name = "USER"
         }
 
-        private val sellerGetByIdRes = userGetByIdRes {
-            this.id = SELLER_ID
-            this.name = "SELLER"
+        private val userGetByTokenRes = userGetByTokenRes {
+            this.id = USER_ID
+            this.name = "USER"
         }
 
         private val productRes = productRes {

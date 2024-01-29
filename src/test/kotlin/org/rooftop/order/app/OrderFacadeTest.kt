@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equality.FieldsEqualityCheckConfig
 import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import org.rooftop.api.identity.userGetByIdRes
+import org.rooftop.api.identity.userGetByTokenRes
 import org.rooftop.api.order.orderReq
 import org.rooftop.api.shop.productRes
 import org.rooftop.order.Application
@@ -44,12 +45,12 @@ internal class OrderFacadeTest(
     describe("order 메소드는") {
         context("존재하는 상품, 판매자, 구매자 에 대한 orderReq 를 받으면,") {
 
-            mockIdentityServer.enqueue200(userGetByIdRes, sellerGetByIdRes)
+            mockIdentityServer.enqueue200(userGetByIdRes, userGetByTokenRes)
             mockPayServer.enqueue200()
             mockShopServer.enqueue200(productRes)
 
             it("주문을 PENDING 상태로 생성하고, 분산 트랜잭션을 시작 한다.") {
-                val result = orderFacade.order(orderReq).log()
+                val result = orderFacade.order(VALID_TOKEN, orderReq).log()
 
                 StepVerifier.create(result)
                     .assertNext {
@@ -74,7 +75,7 @@ internal class OrderFacadeTest(
             mockIdentityServer.enqueue400()
 
             it("IllegalArgumentException을 던진다.") {
-                val result = orderFacade.order(orderReq).log()
+                val result = orderFacade.order(VALID_TOKEN, orderReq).log()
 
                 StepVerifier.create(result)
                     .verifyError(IllegalArgumentException::class.java)
@@ -82,24 +83,11 @@ internal class OrderFacadeTest(
         }
 
         context("존재하지 않는 product의 id가 들어오면,") {
-            mockIdentityServer.enqueue200(userGetByIdRes)
+            mockIdentityServer.enqueue200(userGetByIdRes, userGetByTokenRes)
             mockShopServer.enqueue400()
 
             it("IllegalArgumentException을 던진다.") {
-                val result = orderFacade.order(orderReq).log()
-
-                StepVerifier.create(result)
-                    .verifyError(IllegalArgumentException::class.java)
-            }
-        }
-
-        context("존재하지 않는 seller의 id가 들어오면,") {
-            mockIdentityServer.enqueue200(userGetByIdRes)
-            mockShopServer.enqueue200(productRes)
-            mockIdentityServer.enqueue400()
-
-            it("IllegalArgumentException을 던진다.") {
-                val result = orderFacade.order(orderReq).log()
+                val result = orderFacade.order(VALID_TOKEN, orderReq).log()
 
                 StepVerifier.create(result)
                     .verifyError(IllegalArgumentException::class.java)
@@ -112,14 +100,15 @@ internal class OrderFacadeTest(
         private const val USER_ID = 1L
         private const val SELLER_ID = 2L
         private const val PRODUCT_ID = 3L
+        private const val VALID_TOKEN = "valid token"
 
         private val userGetByIdRes = userGetByIdRes {
             this.id = USER_ID
             this.name = "USER"
         }
 
-        private val sellerGetByIdRes = userGetByIdRes {
-            this.id = SELLER_ID
+        private val userGetByTokenRes = userGetByTokenRes {
+            this.id = USER_ID
             this.name = "SELLER"
         }
 
