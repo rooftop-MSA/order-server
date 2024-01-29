@@ -7,10 +7,12 @@ import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import org.rooftop.order.domain.repository.OrderRepository
 import org.rooftop.order.domain.repository.R2dbcConfigurer
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest
+import org.springframework.data.r2dbc.config.EnableR2dbcAuditing
 import org.springframework.test.context.ContextConfiguration
 import reactor.test.StepVerifier
 
 @DataR2dbcTest
+@EnableR2dbcAuditing
 @DisplayName("OrderRepository 클래스의")
 @ContextConfiguration(classes = [R2dbcConfigurer::class])
 internal class OrderRepositoryTest(private val orderRepository: OrderRepository) : DescribeSpec({
