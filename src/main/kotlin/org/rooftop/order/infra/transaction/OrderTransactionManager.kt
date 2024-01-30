@@ -92,7 +92,7 @@ class OrderTransactionManager(
         return transactionServer.opsForStream<String, ByteArray>()
             .range(transactionId, Range.open("-", "+"))
             .map { Transaction.parseFrom(it.value[DATA].toString().toByteArray()) }
-            .filter { it.serverId == transactionServerId }
+            .filter { it.state == TransactionState.TRANSACTION_STATE_JOIN }
             .next()
             .switchIfEmpty(
                 Mono.error {
