@@ -1,7 +1,7 @@
 package org.rooftop.order.infra.transaction
 
 import org.rooftop.order.domain.OrderState
-import org.rooftop.order.infra.transaction.UndoOrder
+import org.rooftop.order.app.UndoOrder
 
 fun undoOrder(
     id: Long = 1L,

@@ -4,8 +4,7 @@ import org.rooftop.api.transaction.Transaction
 import org.rooftop.api.transaction.TransactionState
 import org.rooftop.api.transaction.transaction
 import org.rooftop.order.app.TransactionManager
-import org.rooftop.order.domain.Order
-import org.rooftop.order.domain.OrderState
+import org.rooftop.order.app.UndoOrder
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationEventPublisher
@@ -21,11 +20,11 @@ class OrderTransactionManager(
     @Value("\${distributed.transaction.server.id}") private val transactionServerId: String,
     @Qualifier("transactionServer") private val transactionServer: ReactiveRedisTemplate<String, ByteArray>,
     @Qualifier("undoServer") private val orderUndoServer: ReactiveRedisTemplate<String, UndoOrder>,
-) : TransactionManager<Order> {
+) : TransactionManager<UndoOrder> {
 
-    override fun join(transactionId: String, state: Order): Mono<String> {
+    override fun join(transactionId: String, state: UndoOrder): Mono<String> {
         return joinOrStartTransaction()
-            .undoBeforeState(UndoOrder(state.id, OrderState.PENDING))
+            .undoBeforeState(state)
             .doOnSuccess {
                 eventPublisher.publishEvent(TransactionJoinedEvent(it))
             }
