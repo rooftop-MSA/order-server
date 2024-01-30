@@ -13,6 +13,7 @@ import org.rooftop.order.domain.OrderService
 import org.rooftop.order.domain.OrderState
 import org.rooftop.order.domain.order
 import org.rooftop.order.infra.WebClientConfigurer
+import org.rooftop.order.infra.transaction.undoOrder
 import org.rooftop.order.server.MockShopServer
 import org.springframework.test.context.ContextConfiguration
 import reactor.core.publisher.Mono
@@ -30,11 +31,12 @@ internal class OrderConfirmFacadeTest(
     private val mockShopServer: MockShopServer,
     private val orderConfirmFacade: OrderConfirmFacade,
     @MockkBean private val orderService: OrderService,
-    @MockkBean private val transactionManager: TransactionManager<Order>,
+    @MockkBean private val transactionManager: TransactionManager<UndoOrder>,
 ) : DescribeSpec({
 
     beforeSpec {
         every { orderService.confirmOrder(orderConfirmReq) } returns Mono.just(successOrder)
+        every { transactionManager.join(TRANSACTION_ID, any()) } returns Mono.just(TRANSACTION_ID)
         every { transactionManager.exists(TRANSACTION_ID) } returns Mono.just(TRANSACTION_ID)
         every { transactionManager.commit(TRANSACTION_ID) } returns Mono.just(Unit)
         every { transactionManager.rollback(TRANSACTION_ID) } returns Mono.just(Unit)

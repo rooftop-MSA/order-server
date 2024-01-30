@@ -5,6 +5,7 @@ import org.rooftop.api.shop.ProductConsumeReq
 import org.rooftop.api.shop.productConsumeReq
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.OrderService
+import org.rooftop.order.domain.OrderState
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
@@ -15,17 +16,27 @@ import reactor.core.scheduler.Schedulers
 @Service
 class OrderConfirmFacade(
     private val orderService: OrderService,
-    private val transactionManager: TransactionManager<Order>,
+    private val transactionManager: TransactionManager<UndoOrder>,
     @Qualifier("shopWebClient") private val shopWebClient: WebClient,
 ) {
 
     fun confirmOrder(orderConfirmReq: OrderConfirmReq): Mono<Unit> {
         return transactionManager.exists(orderConfirmReq.transactionId)
+            .joinTransaction(orderConfirmReq)
             .flatMap { orderService.confirmOrder(orderConfirmReq) }
             .commitOnSuccess(orderConfirmReq)
             .rollbackOnError(orderConfirmReq)
             .consumeProduct(orderConfirmReq.transactionId)
             .map { }
+    }
+
+    private fun Mono<String>.joinTransaction(orderConfirmReq: OrderConfirmReq): Mono<String> {
+        return this.flatMap { transactionId ->
+            transactionManager.join(
+                transactionId,
+                UndoOrder(orderConfirmReq.orderId, OrderState.PENDING)
+            )
+        }
     }
 
     private fun Mono<Order>.consumeProduct(transactionId: String): Mono<Order> {

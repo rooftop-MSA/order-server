@@ -39,7 +39,7 @@ internal class OrderTransactionListenerTest(
             val transactionId = transactionIdGenerator.generate()
 
             it("OrderRollbackEvent 를 발행한다.") {
-                transactionPublisher.join(transactionId, order()).block()
+                transactionPublisher.join(transactionId, undoOrder()).block()
                 transactionPublisher.rollback(transactionId).block()
 
                 eventually(10.seconds) {
@@ -54,8 +54,8 @@ internal class OrderTransactionListenerTest(
             val transactionId2 = transactionIdGenerator.generate()
 
             it("동시에 요청을 읽을 수 있다.") {
-                transactionPublisher.join(transactionId1, order()).block()
-                transactionPublisher.join(transactionId2, order()).block()
+                transactionPublisher.join(transactionId1, undoOrder()).block()
+                transactionPublisher.join(transactionId2, undoOrder()).block()
 
                 transactionPublisher.rollback(transactionId1).block()
                 transactionPublisher.rollback(transactionId2).block()
