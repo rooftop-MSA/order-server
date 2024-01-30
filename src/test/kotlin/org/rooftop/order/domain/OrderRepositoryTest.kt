@@ -36,6 +36,4 @@ internal class OrderRepositoryTest(private val orderRepository: OrderRepository)
             }
         }
     }
-}) {
-
-}
+})
