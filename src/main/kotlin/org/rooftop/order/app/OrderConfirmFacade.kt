@@ -65,7 +65,7 @@ class OrderConfirmFacade(
     private fun <T> Mono<T>.commitOnSuccess(orderConfirmReq: OrderConfirmReq): Mono<T> {
         return this.doOnSuccess {
             transactionManager.commit(orderConfirmReq.transactionId)
-                .subscribeOn(Schedulers.boundedElastic())
+                .subscribeOn(Schedulers.parallel())
                 .subscribe()
         }
     }
@@ -73,7 +73,7 @@ class OrderConfirmFacade(
     private fun <T> Mono<T>.rollbackOnError(orderConfirmReq: OrderConfirmReq): Mono<T> {
         return this.doOnError {
             transactionManager.rollback(orderConfirmReq.transactionId)
-                .subscribeOn(Schedulers.boundedElastic())
+                .subscribeOn(Schedulers.parallel())
                 .subscribe()
         }
     }

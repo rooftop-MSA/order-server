@@ -33,7 +33,7 @@ class OrderTransactionListener(
     @EventListener(TransactionJoinedEvent::class)
     fun subscribeStream(transactionJoinedEvent: TransactionJoinedEvent): Flux<Transaction> {
         return receiver.receive(StreamOffset.fromStart(transactionJoinedEvent.transactionId))
-            .subscribeOn(Schedulers.boundedElastic())
+            .publishOn(Schedulers.parallel())
             .map { Transaction.parseFrom(it.value["data"]?.toByteArray()) }
             .dispatch()
     }
