@@ -3,9 +3,9 @@ package org.rooftop.order.app
 import org.rooftop.api.order.OrderConfirmReq
 import org.rooftop.api.shop.ProductConsumeReq
 import org.rooftop.api.shop.productConsumeReq
+import org.rooftop.netx.api.TransactionManager
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.OrderService
-import org.rooftop.order.domain.OrderState
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
@@ -16,7 +16,7 @@ import reactor.core.scheduler.Schedulers
 @Service
 class OrderConfirmFacade(
     private val orderService: OrderService,
-    private val transactionManager: TransactionManager<UndoOrder>,
+    private val transactionManager: TransactionManager,
     @Qualifier("shopWebClient") private val shopWebClient: WebClient,
 ) {
 
@@ -34,7 +34,7 @@ class OrderConfirmFacade(
         return this.flatMap { transactionId ->
             transactionManager.join(
                 transactionId,
-                UndoOrder(orderConfirmReq.orderId, OrderState.PENDING)
+                "type=undoOrder:orderId:${orderConfirmReq.orderId}"
             )
         }
     }
@@ -72,8 +72,10 @@ class OrderConfirmFacade(
 
     private fun <T> Mono<T>.rollbackOnError(orderConfirmReq: OrderConfirmReq): Mono<T> {
         return this.doOnError {
-            transactionManager.rollback(orderConfirmReq.transactionId)
-                .subscribeOn(Schedulers.parallel())
+            transactionManager.rollback(
+                orderConfirmReq.transactionId,
+                it.message ?: it::class.simpleName!!
+            ).subscribeOn(Schedulers.parallel())
                 .subscribe()
         }
     }
