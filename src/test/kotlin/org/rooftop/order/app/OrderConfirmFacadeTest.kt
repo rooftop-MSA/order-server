@@ -8,12 +8,11 @@ import io.mockk.every
 import io.mockk.verify
 import org.rooftop.api.order.ConfirmState
 import org.rooftop.api.order.orderConfirmReq
-import org.rooftop.order.domain.Order
+import org.rooftop.netx.api.TransactionManager
 import org.rooftop.order.domain.OrderService
 import org.rooftop.order.domain.OrderState
 import org.rooftop.order.domain.order
 import org.rooftop.order.infra.WebClientConfigurer
-import org.rooftop.order.infra.transaction.undoOrder
 import org.rooftop.order.server.MockShopServer
 import org.springframework.test.context.ContextConfiguration
 import reactor.core.publisher.Mono
@@ -31,15 +30,16 @@ internal class OrderConfirmFacadeTest(
     private val mockShopServer: MockShopServer,
     private val orderConfirmFacade: OrderConfirmFacade,
     @MockkBean private val orderService: OrderService,
-    @MockkBean private val transactionManager: TransactionManager<UndoOrder>,
+    @MockkBean private val transactionManager: TransactionManager,
 ) : DescribeSpec({
 
     beforeSpec {
         every { orderService.confirmOrder(orderConfirmReq) } returns Mono.just(successOrder)
         every { transactionManager.join(TRANSACTION_ID, any()) } returns Mono.just(TRANSACTION_ID)
         every { transactionManager.exists(TRANSACTION_ID) } returns Mono.just(TRANSACTION_ID)
-        every { transactionManager.commit(TRANSACTION_ID) } returns Mono.just(Unit)
-        every { transactionManager.rollback(TRANSACTION_ID) } returns Mono.just(Unit)
+        every { transactionManager.commit(TRANSACTION_ID) } returns Mono.just(TRANSACTION_ID)
+        every { transactionManager.rollback(TRANSACTION_ID, any()) } returns
+                Mono.just(TRANSACTION_ID)
     }
 
     afterEach {
@@ -47,8 +47,9 @@ internal class OrderConfirmFacadeTest(
 
         every { orderService.confirmOrder(orderConfirmReq) } returns Mono.just(successOrder)
         every { transactionManager.exists(TRANSACTION_ID) } returns Mono.just(TRANSACTION_ID)
-        every { transactionManager.commit(TRANSACTION_ID) } returns Mono.just(Unit)
-        every { transactionManager.rollback(TRANSACTION_ID) } returns Mono.just(Unit)
+        every { transactionManager.commit(TRANSACTION_ID) } returns Mono.just(TRANSACTION_ID)
+        every { transactionManager.rollback(TRANSACTION_ID, any()) } returns
+                Mono.just(TRANSACTION_ID)
     }
 
     describe("confirmOrder 메소드는") {
@@ -61,7 +62,7 @@ internal class OrderConfirmFacadeTest(
                 StepVerifier.create(result)
                     .assertNext {
                         verify(exactly = 1) { transactionManager.commit(TRANSACTION_ID) }
-                        verify(exactly = 0) { transactionManager.rollback(TRANSACTION_ID) }
+                        verify(exactly = 0) { transactionManager.rollback(TRANSACTION_ID, any()) }
                     }
                     .verifyComplete()
             }
@@ -80,7 +81,7 @@ internal class OrderConfirmFacadeTest(
                 StepVerifier.create(result)
                     .then {
                         verify(exactly = 0) { transactionManager.commit(TRANSACTION_ID) }
-                        verify(exactly = 1) { transactionManager.rollback(TRANSACTION_ID) }
+                        verify(exactly = 1) { transactionManager.rollback(TRANSACTION_ID, any()) }
                     }
                     .verifyError()
             }
@@ -97,7 +98,7 @@ internal class OrderConfirmFacadeTest(
                 StepVerifier.create(result)
                     .then {
                         verify(exactly = 0) { transactionManager.commit(TRANSACTION_ID) }
-                        verify(exactly = 1) { transactionManager.rollback(TRANSACTION_ID) }
+                        verify(exactly = 1) { transactionManager.rollback(TRANSACTION_ID, any()) }
                     }
                     .verifyError()
             }
