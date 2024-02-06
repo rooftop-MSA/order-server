@@ -40,7 +40,7 @@ jobs:
 
       - name: add 🏠 build label
         uses: actions-ecosystem/action-add-labels@v1
-        if: ${{ startsWith(github.event.issues.title, 'build:') || startsWith(github.event.pull_request.title, 'chore:') }}
+        if: ${{ startsWith(github.event.issues.title, 'build:') || startsWith(github.event.pull_request.title, 'build:') }}
         with:
           labels: 🏠 build
 
