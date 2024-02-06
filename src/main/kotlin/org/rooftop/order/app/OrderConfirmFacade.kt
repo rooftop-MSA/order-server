@@ -34,7 +34,7 @@ class OrderConfirmFacade(
         return this.flatMap { transactionId ->
             transactionManager.join(
                 transactionId,
-                "type=undoOrder:orderId:${orderConfirmReq.orderId}"
+                "type=undoOrder:orderId=${orderConfirmReq.orderId}"
             )
         }
     }
