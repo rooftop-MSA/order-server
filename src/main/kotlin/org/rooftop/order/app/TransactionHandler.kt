@@ -15,7 +15,7 @@ class TransactionHandler(
     @EventListener(TransactionRollbackEvent::class)
     fun handleTransactionRollbackEvent(transactionRollbackEvent: TransactionRollbackEvent): Mono<Unit> {
         return Mono.just(transactionRollbackEvent)
-            .map { parseReplayToMap(it.undoState) }
+            .map { parseReplayToMap(it.undo) }
             .dispatch()
     }
 
