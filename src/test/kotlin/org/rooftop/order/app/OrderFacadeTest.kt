@@ -7,7 +7,7 @@ import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import org.rooftop.api.identity.userGetByTokenRes
 import org.rooftop.api.order.orderReq
 import org.rooftop.api.shop.productRes
-import org.rooftop.netx.autoconfig.EnableDistributedTransaction
+import org.rooftop.netx.meta.EnableDistributedTransaction
 import org.rooftop.order.Application
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.order
