@@ -1,6 +1,6 @@
 package org.rooftop.order
 
-import org.rooftop.netx.autoconfig.EnableDistributedTransaction
+import org.rooftop.netx.meta.EnableDistributedTransaction
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
