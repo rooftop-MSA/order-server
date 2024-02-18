@@ -24,7 +24,6 @@ class OrderConfirmFacade(
         return transactionManager.exists(orderConfirmReq.transactionId)
             .joinTransaction(orderConfirmReq)
             .flatMap { orderService.confirmOrder(orderConfirmReq) }
-            .commitOnSuccess(orderConfirmReq)
             .rollbackOnError(orderConfirmReq)
             .consumeProduct(orderConfirmReq.transactionId)
             .map { }
@@ -59,14 +58,6 @@ class OrderConfirmFacade(
             this.transactionId = transactionId
             this.productId = order.orderProduct.productId
             this.consumeQuantity = order.orderProduct.productQuantity
-        }
-    }
-
-    private fun <T> Mono<T>.commitOnSuccess(orderConfirmReq: OrderConfirmReq): Mono<T> {
-        return this.doOnSuccess {
-            transactionManager.commit(orderConfirmReq.transactionId)
-                .subscribeOn(Schedulers.parallel())
-                .subscribe()
         }
     }
 

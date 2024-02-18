@@ -56,12 +56,11 @@ internal class OrderConfirmFacadeTest(
         context("존재하는 transaction 과 pending 상태의 order 를 요청을 받으면,") {
             mockShopServer.enqueue200()
 
-            it("주문을 성공하고 transaction 을 commit 한다.") {
+            it("주문을 성공한다.") {
                 val result = orderConfirmFacade.confirmOrder(orderConfirmReq)
 
                 StepVerifier.create(result)
                     .assertNext {
-                        verify(exactly = 1) { transactionManager.commit(TRANSACTION_ID) }
                         verify(exactly = 0) { transactionManager.rollback(TRANSACTION_ID, any()) }
                     }
                     .verifyComplete()
@@ -80,7 +79,6 @@ internal class OrderConfirmFacadeTest(
 
                 StepVerifier.create(result)
                     .then {
-                        verify(exactly = 0) { transactionManager.commit(TRANSACTION_ID) }
                         verify(exactly = 1) { transactionManager.rollback(TRANSACTION_ID, any()) }
                     }
                     .verifyError()
@@ -97,7 +95,6 @@ internal class OrderConfirmFacadeTest(
 
                 StepVerifier.create(result)
                     .then {
-                        verify(exactly = 0) { transactionManager.commit(TRANSACTION_ID) }
                         verify(exactly = 1) { transactionManager.rollback(TRANSACTION_ID, any()) }
                     }
                     .verifyError()
