@@ -5,14 +5,9 @@ import org.rooftop.api.order.OrderConfirmReq
 import org.rooftop.api.order.OrderReq
 import org.rooftop.api.shop.ProductRes
 import org.rooftop.order.domain.repository.OrderRepository
-import org.springframework.context.event.EventListener
-import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
-import reactor.util.retry.RetrySpec
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.toJavaDuration
 
 @Service
 @Transactional(readOnly = true)
@@ -56,7 +51,6 @@ class OrderService(
             .isPending()
             .changeState(orderConfirmReq)
             .flatMap { orderRepository.save(it) }
-            .retryWhen(retryOptimisticLockingFailure)
     }
 
     private fun Mono<Order>.isPending(): Mono<Order> {
@@ -79,12 +73,11 @@ class OrderService(
     }
 
     @Transactional
-    @EventListener(OrderRollbackEvent::class)
-    fun rollbackOrder(orderRollbackEvent: OrderRollbackEvent): Mono<Unit> {
-        return orderRepository.findById(orderRollbackEvent.id)
+    fun rollbackOrder(id: Long): Mono<Order> {
+        return orderRepository.findById(id)
             .switchIfEmpty(
                 Mono.error {
-                    throw IllegalStateException("Rollback failed cause cannot find exists order by id \"${orderRollbackEvent.id}\"")
+                    throw IllegalStateException("Rollback failed cause cannot find exists order by id \"$id\"")
                 }
             )
             .map { it.fail() }
@@ -94,16 +87,5 @@ class OrderService(
                     throw IllegalStateException("Rollback failed cause cannot save failed order to database")
                 }
             )
-            .retryWhen(retryOptimisticLockingFailure)
-            .map { }
-    }
-
-    private companion object {
-        private const val MOST_100_PERCENT_DELAY = 1.0
-
-        private val retryOptimisticLockingFailure =
-            RetrySpec.fixedDelay(Long.MAX_VALUE, 50.milliseconds.toJavaDuration())
-                .jitter(MOST_100_PERCENT_DELAY)
-                .filter { it is OptimisticLockingFailureException }
     }
 }
