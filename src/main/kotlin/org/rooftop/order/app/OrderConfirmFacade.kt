@@ -7,11 +7,15 @@ import org.rooftop.netx.api.TransactionManager
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.OrderService
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import reactor.util.retry.RetrySpec
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaDuration
 
 @Service
 class OrderConfirmFacade(
@@ -23,7 +27,10 @@ class OrderConfirmFacade(
     fun confirmOrder(orderConfirmReq: OrderConfirmReq): Mono<Unit> {
         return transactionManager.exists(orderConfirmReq.transactionId)
             .joinTransaction(orderConfirmReq)
-            .flatMap { orderService.confirmOrder(orderConfirmReq) }
+            .flatMap {
+                orderService.confirmOrder(orderConfirmReq)
+                    .retryWhen(retryOptimisticLockingFailure)
+            }
             .rollbackOnError(orderConfirmReq)
             .consumeProduct(orderConfirmReq.transactionId)
             .map { }
@@ -69,5 +76,14 @@ class OrderConfirmFacade(
             ).subscribeOn(Schedulers.parallel())
                 .subscribe()
         }
+    }
+
+    private companion object {
+        private const val MOST_100_PERCENT_DELAY = 1.0
+
+        private val retryOptimisticLockingFailure =
+            RetrySpec.fixedDelay(Long.MAX_VALUE, 50.milliseconds.toJavaDuration())
+                .jitter(MOST_100_PERCENT_DELAY)
+                .filter { it is OptimisticLockingFailureException }
     }
 }
