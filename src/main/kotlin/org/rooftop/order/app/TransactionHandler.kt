@@ -33,12 +33,14 @@ class TransactionHandler(
     }
 
     private fun Mono<Map<String, String>>.dispatch(): Mono<Unit> {
-        return this.doOnNext {
+        return this.flatMap {
             when (it["type"]) {
                 "undoOrder" -> orderService.rollbackOrder(
                     it["orderId"]?.toLong()
                         ?: throw IllegalStateException("Transaction replay type \"undoOrder\" must have \"orderId\" field")
                 ).retryWhen(retryOptimisticLockingFailure)
+
+                else -> error("Cannot find matched type \"${it["type"]}\"")
             }
         }.map { }
     }
