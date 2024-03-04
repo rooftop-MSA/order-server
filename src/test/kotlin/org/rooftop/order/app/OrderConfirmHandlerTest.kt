@@ -22,15 +22,15 @@ import kotlin.time.Duration.Companion.seconds
 @DisplayName("OrderConfirmHandler 클래스의")
 @ContextConfiguration(
     classes = [
+        RedisContainer::class,
         OrderConfirmHandler::class,
         WebClientConfigurer::class,
         MockShopServer::class,
-        RedisContainer::class,
         TransactionEventCapture::class,
     ]
 )
 @TestPropertySource("classpath:application.properties")
-internal class OrderConfirmFacadeTest(
+internal class OrderConfirmHandlerTest(
     private val mockShopServer: MockShopServer,
     private val transactionManager: TransactionManager,
     private val transactionEventCapture: TransactionEventCapture,
