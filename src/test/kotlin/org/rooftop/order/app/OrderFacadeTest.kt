@@ -1,5 +1,6 @@
 package org.rooftop.order.app
 
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equality.FieldsEqualityCheckConfig
@@ -20,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import reactor.test.StepVerifier
+import kotlin.time.Duration.Companion.seconds
 
 @SpringBootTest
 @EnableDistributedTransaction
@@ -28,11 +30,12 @@ import reactor.test.StepVerifier
 @ContextConfiguration(
     classes = [
         Application::class,
-        MockPayServer::class,
         MockShopServer::class,
+        MockPayServer::class,
         R2dbcConfigurer::class,
         MockIdentityServer::class,
         RedisContainer::class,
+        TransactionEventCapture::class,
     ]
 )
 internal class OrderFacadeTest(
@@ -40,7 +43,12 @@ internal class OrderFacadeTest(
     private val mockPayServer: MockPayServer,
     private val mockShopServer: MockShopServer,
     private val mockIdentityServer: MockIdentityServer,
+    private val transactionEventCapture: TransactionEventCapture,
 ) : DescribeSpec({
+
+    beforeEach {
+        transactionEventCapture.clear()
+    }
 
     describe("order 메소드는") {
         context("존재하는 상품, 판매자, 구매자 에 대한 orderReq 를 받으면,") {
@@ -50,23 +58,23 @@ internal class OrderFacadeTest(
             mockShopServer.enqueue200(productRes)
 
             it("주문을 PENDING 상태로 생성하고, 분산 트랜잭션을 시작 한다.") {
-                val result = orderFacade.order(VALID_TOKEN, orderReq).log()
+                val result = orderFacade.order(VALID_TOKEN, orderReq)
+                    .block()
 
-                StepVerifier.create(result)
-                    .assertNext {
-                        it.shouldBeEqualToComparingFields(
-                            order,
-                            FieldsEqualityCheckConfig(
-                                propertiesToExclude = listOf(
-                                    Order::id,
-                                    Order::userId,
-                                    Order::modifiedAt,
-                                    Order::createdAt
-                                )
+                eventually(5.seconds) {
+                    result.shouldBeEqualToComparingFields(
+                        order,
+                        FieldsEqualityCheckConfig(
+                            propertiesToExclude = listOf(
+                                Order::id,
+                                Order::userId,
+                                Order::modifiedAt,
+                                Order::createdAt
                             )
                         )
-                    }
-                    .verifyComplete()
+                    )
+                    transactionEventCapture.startShouldBeEqual(1)
+                }
             }
         }
 
@@ -79,6 +87,7 @@ internal class OrderFacadeTest(
 
                 StepVerifier.create(result)
                     .verifyError(IllegalArgumentException::class.java)
+                transactionEventCapture.startShouldBeEqual(0)
             }
         }
 
@@ -91,6 +100,7 @@ internal class OrderFacadeTest(
 
                 StepVerifier.create(result)
                     .verifyError(IllegalArgumentException::class.java)
+                transactionEventCapture.startShouldBeEqual(0)
             }
         }
     }

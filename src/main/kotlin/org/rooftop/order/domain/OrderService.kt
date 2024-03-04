@@ -1,7 +1,5 @@
 package org.rooftop.order.domain
 
-import org.rooftop.api.order.ConfirmState
-import org.rooftop.api.order.OrderConfirmReq
 import org.rooftop.api.order.OrderReq
 import org.rooftop.api.shop.ProductRes
 import org.rooftop.order.domain.repository.OrderRepository
@@ -41,15 +39,15 @@ class OrderService(
     }
 
     @Transactional
-    fun confirmOrder(orderConfirmReq: OrderConfirmReq): Mono<Order> {
-        return orderRepository.findById(orderConfirmReq.orderId)
+    fun confirmOrder(orderId: Long, state: String): Mono<Order> {
+        return orderRepository.findById(orderId)
             .switchIfEmpty(
                 Mono.error {
-                    throw IllegalArgumentException("Cannot find exists order by id \"${orderConfirmReq.orderId}\"")
+                    throw IllegalArgumentException("Cannot find exists order by id \"$orderId\"")
                 }
             )
             .isPending()
-            .changeState(orderConfirmReq)
+            .changeState(state)
             .flatMap { orderRepository.save(it) }
     }
 
@@ -62,12 +60,12 @@ class OrderService(
         }
     }
 
-    private fun Mono<Order>.changeState(orderConfirmReq: OrderConfirmReq): Mono<Order> {
+    private fun Mono<Order>.changeState(state: String): Mono<Order> {
         return this.map {
-            when (orderConfirmReq.confirmState) {
-                ConfirmState.CONFIRM_STATE_SUCCESS -> it.success()
-                ConfirmState.CONFIRM_STATE_FAILED -> it.fail()
-                else -> throw IllegalArgumentException("Cannot find matched order state \"${orderConfirmReq.confirmState}\"")
+            when (state.lowercase()) {
+                "success" -> it.success()
+                "failed" -> it.fail()
+                else -> throw IllegalArgumentException("Cannot find matched order state \"${state}\"")
             }
         }
     }

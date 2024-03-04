@@ -20,11 +20,3 @@ fun WebTestClient.order(token: String, orderReq: OrderReq): ResponseSpec {
         .bodyValue(orderReq.toByteArray())
         .exchange()
 }
-
-fun WebTestClient.confirmOrder(token: String, orderConfirmReq: OrderConfirmReq): ResponseSpec {
-    return this.post()
-        .uri("/v1/orders/confirms")
-        .header(HttpHeaders.CONTENT_TYPE, "application/x-protobuf")
-        .bodyValue(orderConfirmReq.toByteArray())
-        .exchange()
-}
