@@ -27,13 +27,8 @@ internal class OrderServiceTest(
     describe("confirmOrder 메소드는") {
         context("PENDING 상태의 Order 를 변경하는 요청이 들어오면,") {
 
-            val orderConfirmReq = orderConfirmReq {
-                this.orderId = PENDING_ORDER_ID
-                this.confirmState = ConfirmState.CONFIRM_STATE_SUCCESS
-            }
-
             it("Order 의 상태를 변경한다.") {
-                val result = orderService.confirmOrder(orderConfirmReq)
+                val result = orderService.confirmOrder(PENDING_ORDER_ID, "success")
 
                 StepVerifier.create(result)
                     .assertNext {
@@ -45,13 +40,8 @@ internal class OrderServiceTest(
 
         context("PENDING 이 아닌 상태의 Order 를 변경하는 요청이 들어오면,") {
 
-            val orderConfirmReq = orderConfirmReq {
-                this.orderId = SUCCESS_ORDER_ID
-                this.confirmState = ConfirmState.CONFIRM_STATE_FAILED
-            }
-
             it("IllegalArgumentException 을 던진다.") {
-                val result = orderService.confirmOrder(orderConfirmReq)
+                val result = orderService.confirmOrder(SUCCESS_ORDER_ID, "fail")
 
                 StepVerifier.create(result)
                     .verifyErrorMessage(

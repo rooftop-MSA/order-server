@@ -3,14 +3,10 @@ package org.rooftop.order.integration
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equals.shouldBeEqual
-import org.rooftop.api.identity.userGetByIdRes
 import org.rooftop.api.identity.userGetByTokenRes
-import org.rooftop.api.order.ConfirmState
 import org.rooftop.api.order.OrderRes
-import org.rooftop.api.order.orderConfirmReq
 import org.rooftop.api.order.orderReq
 import org.rooftop.api.shop.productRes
-import org.rooftop.netx.api.TransactionManager
 import org.rooftop.order.Application
 import org.rooftop.order.app.RedisContainer
 import org.rooftop.order.domain.repository.R2dbcConfigurer
@@ -42,7 +38,6 @@ internal class IntegrationTest(
     private val mockShopServer: MockShopServer,
     private val mockIdentityServer: MockIdentityServer,
     private val r2dbcEntityTemplate: R2dbcEntityTemplate,
-    private val transactionManager: TransactionManager,
 ) : DescribeSpec({
 
     afterEach {
@@ -85,32 +80,6 @@ internal class IntegrationTest(
                 val result = api.order(VALID_TOKEN, orderReq)
 
                 result.expectStatus().isBadRequest
-            }
-        }
-    }
-
-    describe("주문 확정 API는") {
-        context("PENDING 상태인 주문을 확정하는 요청이 들어올 경우,") {
-
-            val transactionId = transactionManager.start("test").block()!!
-
-            mockIdentityServer.enqueue200(userGetByTokenRes)
-            mockShopServer.enqueue200(productRes)
-            mockShopServer.enqueue200()
-            mockPayServer.enqueue200()
-
-            val orderId = api.orderAndGetId(VALID_TOKEN, orderReq)
-
-            val orderConfirmReq = orderConfirmReq {
-                this.transactionId = transactionId
-                this.orderId = orderId
-                this.confirmState = ConfirmState.CONFIRM_STATE_SUCCESS
-            }
-
-            it("200 Ok 를 응답한다.") {
-                val result = api.confirmOrder(VALID_TOKEN, orderConfirmReq)
-
-                result.expectStatus().isOk
             }
         }
     }

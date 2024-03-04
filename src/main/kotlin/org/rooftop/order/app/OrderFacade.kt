@@ -80,7 +80,7 @@ class OrderFacade(
 
     private fun Mono<Order>.startTransaction(): Mono<Pair<String, Order>> {
         return this.flatMap { order ->
-            transactionManager.start("type=undoOrder:orderId=${order.id}")
+            transactionManager.start(undo = UndoOrder(order.id))
                 .map { it to order }
         }
     }
