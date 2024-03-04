@@ -2,7 +2,6 @@ package org.rooftop.order.controller
 
 import org.rooftop.api.identity.ErrorRes
 import org.rooftop.api.identity.errorRes
-import org.rooftop.api.order.OrderConfirmReq
 import org.rooftop.api.order.OrderReq
 import org.rooftop.api.order.OrderRes
 import org.rooftop.api.order.orderRes
