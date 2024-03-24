@@ -14,6 +14,7 @@ import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.order
 import org.rooftop.order.domain.orderProduct
 import org.rooftop.order.domain.repository.R2dbcConfigurer
+import org.rooftop.order.infra.OrderOrchestratorConfigurer
 import org.rooftop.order.server.MockIdentityServer
 import org.rooftop.order.server.MockPayServer
 import org.rooftop.order.server.MockShopServer
@@ -35,7 +36,7 @@ import kotlin.time.Duration.Companion.seconds
         R2dbcConfigurer::class,
         MockIdentityServer::class,
         RedisContainer::class,
-        TransactionEventCapture::class,
+        OrderOrchestratorConfigurer::class,
     ]
 )
 internal class OrderFacadeTest(
@@ -43,12 +44,7 @@ internal class OrderFacadeTest(
     private val mockPayServer: MockPayServer,
     private val mockShopServer: MockShopServer,
     private val mockIdentityServer: MockIdentityServer,
-    private val transactionEventCapture: TransactionEventCapture,
 ) : DescribeSpec({
-
-    beforeEach {
-        transactionEventCapture.clear()
-    }
 
     describe("order 메소드는") {
         context("존재하는 상품, 판매자, 구매자 에 대한 orderReq 를 받으면,") {
@@ -57,7 +53,7 @@ internal class OrderFacadeTest(
             mockPayServer.enqueue200()
             mockShopServer.enqueue200(productRes)
 
-            it("주문을 PENDING 상태로 생성하고, 분산 트랜잭션을 시작 한다.") {
+            it("주문을 PENDING 상태로 생성하고 Pay 에 order 를 등록한다.") {
                 val result = orderFacade.order(VALID_TOKEN, orderReq)
                     .block()
 
@@ -73,7 +69,6 @@ internal class OrderFacadeTest(
                             )
                         )
                     )
-                    transactionEventCapture.startShouldBeEqual(1)
                 }
             }
         }
@@ -87,7 +82,6 @@ internal class OrderFacadeTest(
 
                 StepVerifier.create(result)
                     .verifyError(IllegalArgumentException::class.java)
-                transactionEventCapture.startShouldBeEqual(0)
             }
         }
 
@@ -100,7 +94,6 @@ internal class OrderFacadeTest(
 
                 StepVerifier.create(result)
                     .verifyError(IllegalArgumentException::class.java)
-                transactionEventCapture.startShouldBeEqual(0)
             }
         }
     }

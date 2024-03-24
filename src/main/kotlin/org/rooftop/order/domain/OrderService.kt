@@ -1,7 +1,7 @@
 package org.rooftop.order.domain
 
-import org.rooftop.api.order.OrderReq
-import org.rooftop.api.shop.ProductRes
+import org.rooftop.order.domain.data.OrderDto
+import org.rooftop.order.domain.data.ProductDto
 import org.rooftop.order.domain.repository.OrderRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,8 +15,8 @@ class OrderService(
 ) {
 
     @Transactional
-    fun order(orderReq: OrderReq, product: ProductRes): Mono<Order> {
-        return orderRepository.save(toOrder(orderReq, product))
+    fun order(orderDto: OrderDto, productDto: ProductDto): Mono<Order> {
+        return orderRepository.save(toOrder(orderDto, productDto))
             .switchIfEmpty(
                 Mono.error {
                     throw IllegalStateException("Cannot save order")
@@ -24,14 +24,14 @@ class OrderService(
             )
     }
 
-    private fun toOrder(orderReq: OrderReq, product: ProductRes): Order {
+    private fun toOrder(orderDto: OrderDto, productDto: ProductDto): Order {
         return Order(
             id = idGenerator.generate(),
-            userId = orderReq.userId,
+            userId = orderDto.userId,
             orderProduct = OrderProduct(
-                productId = product.id,
-                productQuantity = orderReq.quantity,
-                totalPrice = orderReq.quantity * product.price
+                productId = productDto.id,
+                productQuantity = orderDto.quantity,
+                totalPrice = orderDto.quantity * productDto.price
             ),
             state = OrderState.PENDING,
             isNew = true,
