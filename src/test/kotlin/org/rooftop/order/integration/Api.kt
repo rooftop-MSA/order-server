@@ -1,6 +1,5 @@
 package org.rooftop.order.integration
 
-import org.rooftop.api.order.OrderConfirmReq
 import org.rooftop.api.order.OrderReq
 import org.rooftop.api.order.OrderRes
 import org.springframework.http.HttpHeaders

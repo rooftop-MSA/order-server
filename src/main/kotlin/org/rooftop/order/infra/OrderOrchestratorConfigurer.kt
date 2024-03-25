@@ -16,6 +16,9 @@ import org.springframework.http.HttpHeaders
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
+import reactor.util.retry.Retry
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 @Configuration
 class OrderOrchestratorConfigurer(
@@ -127,12 +130,24 @@ class OrderOrchestratorConfigurer(
                     if (it.statusCode().is2xxSuccessful) {
                         return@exchangeToMono Mono.just(it.statusCode().value())
                     }
+                    if (it.statusCode().is5xxServerError) {
+                        return@exchangeToMono it.createError<Int>()
+                            .onErrorMap { throw retryException }
+                    }
                     it.createError<Int>()
                         .onErrorMap {
                             throw IllegalStateException("Internal server error cause", it)
                         }
                 }
+                .retryWhen(Retry.backoff(5L, 1.seconds.toJavaDuration())
+                    .jitter(0.5)
+                    .filter { it.message == retryException.message }
+                )
                 .map { request }
+        }
+
+        private companion object {
+            private val retryException = IllegalStateException("Retryable exception")
         }
     }
 }

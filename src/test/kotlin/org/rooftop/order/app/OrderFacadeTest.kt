@@ -8,37 +8,31 @@ import io.kotest.matchers.equality.shouldBeEqualToComparingFields
 import org.rooftop.api.identity.userGetByTokenRes
 import org.rooftop.api.order.orderReq
 import org.rooftop.api.shop.productRes
-import org.rooftop.netx.meta.EnableDistributedTransaction
 import org.rooftop.order.Application
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.order
 import org.rooftop.order.domain.orderProduct
 import org.rooftop.order.domain.repository.R2dbcConfigurer
-import org.rooftop.order.infra.OrderOrchestratorConfigurer
 import org.rooftop.order.server.MockIdentityServer
 import org.rooftop.order.server.MockPayServer
 import org.rooftop.order.server.MockShopServer
-import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import reactor.test.StepVerifier
 import kotlin.time.Duration.Companion.seconds
 
-@SpringBootTest
-@EnableDistributedTransaction
-@DisplayName("OrderFacade 클래스의")
-@TestPropertySource("classpath:application.properties")
 @ContextConfiguration(
     classes = [
         Application::class,
         MockShopServer::class,
         MockPayServer::class,
-        R2dbcConfigurer::class,
         MockIdentityServer::class,
         RedisContainer::class,
-        OrderOrchestratorConfigurer::class,
     ]
 )
+@DisplayName("OrderFacade 클래스의")
+@TestPropertySource("classpath:application.properties")
 internal class OrderFacadeTest(
     private val orderFacade: OrderFacade,
     private val mockPayServer: MockPayServer,
@@ -50,8 +44,8 @@ internal class OrderFacadeTest(
         context("존재하는 상품, 판매자, 구매자 에 대한 orderReq 를 받으면,") {
 
             mockIdentityServer.enqueue200(userGetByTokenRes)
-            mockPayServer.enqueue200()
             mockShopServer.enqueue200(productRes)
+            mockPayServer.enqueue200()
 
             it("주문을 PENDING 상태로 생성하고 Pay 에 order 를 등록한다.") {
                 val result = orderFacade.order(VALID_TOKEN, orderReq)
