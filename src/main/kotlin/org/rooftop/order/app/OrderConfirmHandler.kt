@@ -35,13 +35,21 @@ class OrderConfirmHandler(
                 .map { transactionId to it }
         }.filter { (_, order) ->
             order.state == OrderState.SUCCESS
-        }.flatMap { (transactionId, order) ->
+        }.transformDeferredContextual { request, context ->
+            request.map {
+                it to context.get<PayConfirmEvent>("event")
+            }
+        }.flatMap { (transactionIdAndOrder, event) ->
+            val transactionId = transactionIdAndOrder.first
+            val order = transactionIdAndOrder.second
             transactionManager.join(
                 transactionId = transactionId,
                 undo = UndoOrder(order.id),
                 event = OrderConfirmEvent(
-                    order.orderProduct.productId,
-                    order.orderProduct.productQuantity,
+                    event.payId,
+                    order.id,
+                    order.productId(),
+                    order.productQuantity(),
                 ),
             )
         }.rollbackOnError(transactionStartEvent.transactionId, transactionStartEvent)

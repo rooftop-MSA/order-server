@@ -52,6 +52,10 @@ class Order(
 
     fun success(): Order = copy(state = OrderState.SUCCESS)
 
+    fun productId(): Long = orderProduct.productId
+
+    fun productQuantity(): Long = orderProduct.productQuantity
+
     private fun copy(
         id: Long = this.id,
         userId: Long = this.userId,
