@@ -3,6 +3,7 @@ package org.rooftop.order.app
 import org.rooftop.netx.api.TransactionRollbackEvent
 import org.rooftop.netx.api.TransactionRollbackListener
 import org.rooftop.netx.meta.TransactionHandler
+import org.rooftop.order.app.event.PayCancelEvent
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.OrderService
 import org.springframework.dao.OptimisticLockingFailureException
@@ -16,7 +17,10 @@ class OrderRollbackHandler(
     private val orderService: OrderService,
 ) {
 
-    @TransactionRollbackListener(noRetryFor = [IllegalStateException::class])
+    @TransactionRollbackListener(
+        event = PayCancelEvent::class,
+        noRetryFor = [IllegalStateException::class]
+    )
     fun rollbackOrder(transactionRollbackEvent: TransactionRollbackEvent): Mono<Order> {
         return Mono.fromCallable {
             transactionRollbackEvent.decodeUndo(UndoOrder::class)

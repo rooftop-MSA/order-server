@@ -1,43 +1,46 @@
 package org.rooftop.order.integration
 
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.shouldNotBe
 import org.rooftop.api.identity.userGetByTokenRes
 import org.rooftop.api.order.OrderRes
 import org.rooftop.api.order.orderReq
 import org.rooftop.api.shop.productRes
 import org.rooftop.order.Application
 import org.rooftop.order.app.RedisContainer
-import org.rooftop.order.domain.repository.R2dbcConfigurer
+import org.rooftop.order.domain.OrderState
+import org.rooftop.order.domain.repository.OrderRepository
 import org.rooftop.order.server.MockIdentityServer
 import org.rooftop.order.server.MockPayServer
 import org.rooftop.order.server.MockShopServer
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.reactive.server.WebTestClient
+import kotlin.time.Duration.Companion.seconds
 
-@AutoConfigureWebTestClient
-@DisplayName("Order 통합테스트의 ")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(
+@SpringBootTest(
     classes = [
         Application::class,
         MockPayServer::class,
         MockShopServer::class,
-        R2dbcConfigurer::class,
         MockIdentityServer::class,
         RedisContainer::class,
-    ]
+    ],
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
+@AutoConfigureWebTestClient
+@DisplayName("Order 통합테스트의 ")
 internal class IntegrationTest(
     private val api: WebTestClient,
     private val mockPayServer: MockPayServer,
     private val mockShopServer: MockShopServer,
     private val mockIdentityServer: MockIdentityServer,
     private val r2dbcEntityTemplate: R2dbcEntityTemplate,
+    private val orderRepository: OrderRepository,
 ) : DescribeSpec({
 
     afterEach {
@@ -80,6 +83,36 @@ internal class IntegrationTest(
                 val result = api.order(VALID_TOKEN, orderReq)
 
                 result.expectStatus().isBadRequest
+            }
+        }
+
+        context("Payment서버의 에러로 Order등록을 실패할경우,") {
+            mockIdentityServer.enqueue200(userGetByTokenRes)
+            mockShopServer.enqueue200(productRes)
+            mockPayServer.enqueue500()
+            mockPayServer.enqueue200()
+
+            it("최대 5번 retry 한다.") {
+                val result = api.order(VALID_TOKEN, orderReq)
+
+                result.expectStatus().isOk
+            }
+        }
+
+        context("Order서버의 잘못된 요청으로 Order등록을 실패할경우,") {
+            mockIdentityServer.enqueue200(userGetByTokenRes)
+            mockShopServer.enqueue200(productRes)
+            mockPayServer.enqueue400()
+
+            it("400 Bad Request를 응답하고 order를 rollback 한다.") {
+                val result = api.order(VALID_TOKEN, orderReq)
+
+                result.expectStatus().is4xxClientError
+                eventually(5.seconds) {
+                    val order = orderRepository.findAll().blockFirst()
+                    order shouldNotBe null
+                    order!!.state shouldBeEqual OrderState.FAILED
+                }
             }
         }
     }

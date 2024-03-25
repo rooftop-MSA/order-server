@@ -41,6 +41,6 @@ abstract class MockServer {
         )
     }
 
-    @EventListener(ContextClosedEvent::class)
+//    @EventListener(ContextClosedEvent::class)
     fun shutDown() = mockWebSerer.shutdown()
 }

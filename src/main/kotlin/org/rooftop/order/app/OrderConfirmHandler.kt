@@ -5,6 +5,7 @@ import org.rooftop.netx.api.TransactionStartEvent
 import org.rooftop.netx.api.TransactionStartListener
 import org.rooftop.netx.meta.TransactionHandler
 import org.rooftop.order.app.event.OrderConfirmEvent
+import org.rooftop.order.app.event.PayCancelEvent
 import org.rooftop.order.app.event.PayConfirmEvent
 import org.rooftop.order.domain.OrderService
 import org.rooftop.order.domain.OrderState
@@ -43,20 +44,28 @@ class OrderConfirmHandler(
                     order.orderProduct.productQuantity,
                 ),
             )
-        }.rollbackOnError(transactionStartEvent.transactionId).contextWrite {
-            it.putAllMap(
-                mapOf(
-                    "transactionId" to transactionStartEvent.transactionId,
-                    "event" to transactionStartEvent.decodeEvent(PayConfirmEvent::class),
+        }.rollbackOnError(transactionStartEvent.transactionId, transactionStartEvent)
+            .contextWrite {
+                it.putAllMap(
+                    mapOf(
+                        "transactionId" to transactionStartEvent.transactionId,
+                        "event" to transactionStartEvent.decodeEvent(PayConfirmEvent::class),
+                    )
                 )
-            )
-        }
+            }
     }
 
-    private fun <T> Mono<T>.rollbackOnError(transactionId: String): Mono<T> {
+    private fun <T> Mono<T>.rollbackOnError(
+        transactionId: String,
+        transactionStartEvent: TransactionStartEvent
+    ): Mono<T> {
         return this.doOnError {
-            transactionManager.rollback(transactionId, it.message!!)
-                .subscribeOn(Schedulers.boundedElastic())
+            val payConfirmEvent = transactionStartEvent.decodeEvent(PayConfirmEvent::class)
+            transactionManager.rollback(
+                transactionId,
+                it.message!!,
+                PayCancelEvent(payConfirmEvent.payId, payConfirmEvent.orderId)
+            ).subscribeOn(Schedulers.parallel())
                 .subscribe()
         }
     }
