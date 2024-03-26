@@ -22,10 +22,7 @@ class OrderConfirmHandler(
     private val transactionManager: TransactionManager,
 ) {
 
-    @TransactionStartListener(
-        event = PayConfirmEvent::class,
-        noRetryFor = [IllegalArgumentException::class]
-    )
+    @TransactionStartListener(event = PayConfirmEvent::class)
     fun listenPayConfirmEvent(transactionStartEvent: TransactionStartEvent): Mono<String> {
         return Mono.deferContextual {
             Mono.just(it.get<String>("transactionId") to it.get<PayConfirmEvent>("event"))
@@ -33,6 +30,12 @@ class OrderConfirmHandler(
             orderService.confirmOrder(payConfirmEvent.orderId, payConfirmEvent.confirmState)
                 .retryWhen(retryOptimisticLockingFailure)
                 .map { transactionId to it }
+                .onErrorResume {
+                    if (it is IllegalArgumentException) {
+                        return@onErrorResume Mono.empty()
+                    }
+                    throw it
+                }
         }.filter { (_, order) ->
             order.state == OrderState.SUCCESS
         }.transformDeferredContextual { request, context ->
