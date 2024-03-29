@@ -52,7 +52,12 @@ class OrderConfirmHandler(
             transactionJoinEvent.setNextEvent(orderConfirmEvent)
         }.onErrorMap {
             val payConfirmEvent = transactionJoinEvent.decodeEvent(PayConfirmEvent::class)
-            val payCancelEvent = PayCancelEvent(payConfirmEvent.payId, payConfirmEvent.orderId)
+            val payCancelEvent = PayCancelEvent(
+                payConfirmEvent.payId,
+                payConfirmEvent.userId,
+                payConfirmEvent.orderId,
+                payConfirmEvent.totalPrice,
+            )
             transactionJoinEvent.setNextEvent(payCancelEvent)
             throw it
         }.contextWrite {
