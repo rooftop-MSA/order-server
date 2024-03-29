@@ -10,6 +10,7 @@ import org.rooftop.order.app.event.PayConfirmEvent
 import org.rooftop.order.domain.OrderService
 import org.rooftop.order.domain.OrderState
 import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.transaction.CannotCreateTransactionException
 import reactor.core.publisher.Mono
 import reactor.util.retry.RetrySpec
 import kotlin.time.Duration.Companion.milliseconds
@@ -78,6 +79,8 @@ class OrderConfirmHandler(
         private val retryOptimisticLockingFailure =
             RetrySpec.fixedDelay(Long.MAX_VALUE, 1000.milliseconds.toJavaDuration())
                 .jitter(MOST_100_PERCENT_DELAY)
-                .filter { it is OptimisticLockingFailureException }
+                .filter {
+                    it is OptimisticLockingFailureException || it is CannotCreateTransactionException
+                }
     }
 }
