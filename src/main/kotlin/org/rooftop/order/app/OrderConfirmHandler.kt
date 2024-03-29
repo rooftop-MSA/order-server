@@ -45,9 +45,11 @@ class OrderConfirmHandler(
         }.map { (order, event) ->
             val orderConfirmEvent = OrderConfirmEvent(
                 event.payId,
+                event.userId,
                 order.id,
                 order.productId(),
                 order.productQuantity(),
+                order.totalPrice(),
             )
             transactionJoinEvent.setNextEvent(orderConfirmEvent)
         }.onErrorMap {
