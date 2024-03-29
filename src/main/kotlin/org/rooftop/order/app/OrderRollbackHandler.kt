@@ -20,9 +20,9 @@ class OrderRollbackHandler(
     @TransactionRollbackListener(event = PayCancelEvent::class)
     fun rollbackOrder(transactionRollbackEvent: TransactionRollbackEvent): Mono<Order> {
         return Mono.fromCallable {
-            transactionRollbackEvent.decodeUndo(UndoOrder::class)
-        }.flatMap {
-            orderService.rollbackOrder(it.id)
+            transactionRollbackEvent.decodeEvent(PayCancelEvent::class)
+        }.flatMap { payCancelEvent ->
+            orderService.rollbackOrder(payCancelEvent.orderId)
                 .retryWhen(retryOptimisticLockingFailure)
                 .onErrorResume {
                     if (it is IllegalStateException) {
