@@ -1,9 +1,9 @@
 package org.rooftop.order.app
 
+import org.rooftop.netx.api.SagaJoinEvent
+import org.rooftop.netx.api.SagaJoinListener
 import org.rooftop.netx.api.SuccessWith
-import org.rooftop.netx.api.TransactionJoinEvent
-import org.rooftop.netx.api.TransactionJoinListener
-import org.rooftop.netx.meta.TransactionHandler
+import org.rooftop.netx.meta.SagaHandler
 import org.rooftop.order.app.event.OrderConfirmEvent
 import org.rooftop.order.app.event.PayCancelEvent
 import org.rooftop.order.app.event.PayConfirmEvent
@@ -16,16 +16,16 @@ import reactor.util.retry.RetrySpec
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 
-@TransactionHandler
+@SagaHandler
 class OrderConfirmHandler(
     private val orderService: OrderService,
 ) {
 
-    @TransactionJoinListener(
+    @SagaJoinListener(
         event = PayConfirmEvent::class,
         successWith = SuccessWith.PUBLISH_COMMIT,
     )
-    fun listenPayConfirmEvent(transactionJoinEvent: TransactionJoinEvent): Mono<OrderConfirmEvent> {
+    fun listenPayConfirmEvent(sagaJoinEvent: SagaJoinEvent): Mono<OrderConfirmEvent> {
         return Mono.deferContextual {
             Mono.just(it.get<PayConfirmEvent>("event"))
         }.flatMap { payConfirmEvent ->
@@ -52,24 +52,19 @@ class OrderConfirmHandler(
                 order.productQuantity(),
                 order.totalPrice(),
             )
-            transactionJoinEvent.setNextEvent(orderConfirmEvent)
+            sagaJoinEvent.setNextEvent(orderConfirmEvent)
         }.onErrorMap {
-            val payConfirmEvent = transactionJoinEvent.decodeEvent(PayConfirmEvent::class)
+            val payConfirmEvent = sagaJoinEvent.decodeEvent(PayConfirmEvent::class)
             val payCancelEvent = PayCancelEvent(
                 payConfirmEvent.payId,
                 payConfirmEvent.userId,
                 payConfirmEvent.orderId,
                 payConfirmEvent.totalPrice,
             )
-            transactionJoinEvent.setNextEvent(payCancelEvent)
+            sagaJoinEvent.setNextEvent(payCancelEvent)
             throw it
         }.contextWrite {
-            it.putAllMap(
-                mapOf(
-                    "transactionId" to transactionJoinEvent.transactionId,
-                    "event" to transactionJoinEvent.decodeEvent(PayConfirmEvent::class),
-                )
-            )
+            it.put("event", sagaJoinEvent.decodeEvent(PayConfirmEvent::class))
         }
     }
 

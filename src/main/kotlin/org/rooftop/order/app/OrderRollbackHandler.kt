@@ -1,8 +1,8 @@
 package org.rooftop.order.app
 
-import org.rooftop.netx.api.TransactionRollbackEvent
-import org.rooftop.netx.api.TransactionRollbackListener
-import org.rooftop.netx.meta.TransactionHandler
+import org.rooftop.netx.api.SagaRollbackEvent
+import org.rooftop.netx.api.SagaRollbackListener
+import org.rooftop.netx.meta.SagaHandler
 import org.rooftop.order.app.event.PayCancelEvent
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.OrderService
@@ -13,15 +13,15 @@ import reactor.util.retry.RetrySpec
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 
-@TransactionHandler
+@SagaHandler
 class OrderRollbackHandler(
     private val orderService: OrderService,
 ) {
 
-    @TransactionRollbackListener(event = PayCancelEvent::class)
-    fun rollbackOrder(transactionRollbackEvent: TransactionRollbackEvent): Mono<Order> {
+    @SagaRollbackListener(event = PayCancelEvent::class)
+    fun rollbackOrder(sagaRollbackEvent: SagaRollbackEvent): Mono<Order> {
         return Mono.fromCallable {
-            transactionRollbackEvent.decodeEvent(PayCancelEvent::class)
+            sagaRollbackEvent.decodeEvent(PayCancelEvent::class)
         }.flatMap { payCancelEvent ->
             orderService.rollbackOrder(payCancelEvent.orderId)
                 .retryWhen(retryOptimisticLockingFailure)

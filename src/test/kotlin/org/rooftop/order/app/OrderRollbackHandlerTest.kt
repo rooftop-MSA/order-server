@@ -4,7 +4,7 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.annotation.DisplayName
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.equals.shouldBeEqual
-import org.rooftop.netx.api.TransactionManager
+import org.rooftop.netx.api.SagaManager
 import org.rooftop.order.Application
 import org.rooftop.order.app.event.PayCancelEvent
 import org.rooftop.order.domain.OrderState
@@ -27,7 +27,7 @@ import kotlin.time.Duration.Companion.seconds
 )
 @DisplayName("OrderRollbackHandler 클래스의")
 internal class OrderRollbackHandlerTest(
-    private val transactionManager: TransactionManager,
+    private val transactionManager: SagaManager,
     private val orderRepository: OrderRepository,
 ) : DescribeSpec({
 

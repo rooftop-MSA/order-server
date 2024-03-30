@@ -13,10 +13,12 @@ class OrderFacade(
 ) {
 
     fun order(token: String, orderReq: OrderReq): Mono<Order> {
-        return orderOrchestrator.transaction(
+        return orderOrchestrator.saga(
             1000 * 60,
             OrderDto(orderReq.userId, orderReq.productId, orderReq.quantity),
             mutableMapOf("token" to token)
-        ).map { result -> result.decodeResultOrThrow(Order::class) }
+        ).map {
+            result -> result.decodeResultOrThrow(Order::class)
+        }
     }
 }

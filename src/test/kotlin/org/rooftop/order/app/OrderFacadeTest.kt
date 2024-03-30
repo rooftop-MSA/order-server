@@ -12,11 +12,9 @@ import org.rooftop.order.Application
 import org.rooftop.order.domain.Order
 import org.rooftop.order.domain.order
 import org.rooftop.order.domain.orderProduct
-import org.rooftop.order.domain.repository.R2dbcConfigurer
 import org.rooftop.order.server.MockIdentityServer
 import org.rooftop.order.server.MockPayServer
 import org.rooftop.order.server.MockShopServer
-import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import reactor.test.StepVerifier
