@@ -42,10 +42,10 @@ internal class OrderRollbackHandlerTest(
 
     describe("rollbackOrder 메소드는") {
         context("등록된 orderId를 갖고있는 PayCancelEvent 를 수신하면,") {
-            val transactionId = transactionManager.syncStart()
+            val transactionId = transactionManager.startSync()
 
             it("Order 를 failed 상태로 변경한다.") {
-                transactionManager.syncRollback(transactionId, "for test", validPayCancelEvent)
+                transactionManager.rollbackSync(transactionId, "for test", validPayCancelEvent)
 
                 eventually(5.seconds) {
                     orderRepository.findById(ORDER_ID)
